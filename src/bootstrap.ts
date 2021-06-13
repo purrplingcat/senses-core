@@ -11,7 +11,7 @@ export async function setupSenses(configFile: string, debug: boolean): Promise<S
 
     senses.debug = debug;
 
-    if (debug) {
+    if (senses.debug) {
         consola.info("Running in debug mode");
     }
 

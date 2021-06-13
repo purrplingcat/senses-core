@@ -23,5 +23,9 @@ export default async function run(argv: string[], env: NodeJS.ProcessEnv): Promi
         throw new Error("Http server is not configured.");
     }
 
+    if (senses.mqtt == null) {
+        throw new Error("MQTT broker is not configured.");
+    }
+
     senses.start();
 }

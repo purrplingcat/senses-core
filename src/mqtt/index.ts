@@ -4,7 +4,7 @@ import MqttLight from "./MqttLight";
 import { ISenses } from "../core/Senses";
 import { YAMLMap } from "yaml/types";
 
-export const name = "MqttLight";
+export const name = "mqtt";
 export const domain = "mqtt";
 export const platforms = ["light"];
 
