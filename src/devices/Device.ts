@@ -3,6 +3,7 @@ import Entity from "../core/Entity";
 
 export default abstract class Device<TState> implements Entity {
     public title?: string;
+    public uid?: string;
     public name = "";
     public type = "";
     public abstract setState(state: Partial<TState>): Promise<boolean> | boolean;

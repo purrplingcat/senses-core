@@ -5,6 +5,7 @@ const routes: Router = Router();
 
 function deviceMapper(device: Device<unknown>) {
     return {
+        uid: device.uid || null,
         entityId: device.entityId,
         name: device.name,
         type: device.type,

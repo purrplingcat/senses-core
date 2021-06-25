@@ -15,6 +15,7 @@ export interface ISenses {
     http?: Application;
     devices: Device<unknown>[];
     services: IService[];
+    hasDevice(uidOrEntityId: string): boolean;
     addDevice<TState>(device: Device<TState>): void;
     addService(service: IService): void;
     callService<TParams>(name: string, params: TParams): Promise<boolean>;
@@ -64,7 +65,15 @@ export class Senses implements ISenses {
         return await service.call(params, this);
     }
 
+    hasDevice(uidOrEntityId: string): boolean {
+        return !!this.devices.find((d) => d.uid === uidOrEntityId || d.entityId === uidOrEntityId);
+    }
+
     addDevice<TState>(device: Device<TState>): void {
+        if (device.uid && this.devices.find((d) => d.uid === device.uid)) {
+            throw new Error(`Device with uid ${device.uid} already exists`);
+        }
+
         this.devices.push(device);
         this.eventbus.emit("device.add", device, this);
         consola.debug(`Added device ${device.name} type ${device.type} (${device.constructor.name})`);
