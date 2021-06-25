@@ -16,7 +16,15 @@ export interface Component {
 const loadedComponents: Component[] = [];
 
 function fetchPlatformConfig(config: Document, platform: string, component: Component): YAMLMap[] {
-    return config.get(platform).items.filter((itm: YAMLMap) => itm.get("platform") === component.domain);
+    if (!config.has(platform)) {
+        return [];
+    }
+
+    return (
+        config
+            .get(platform)
+            .items?.filter((itm: YAMLMap) => itm instanceof YAMLMap && itm.get("platform") === component.domain) ?? []
+    );
 }
 
 export async function loadComponent(path: string, senses: ISenses, config: Document): Promise<Component | null> {
@@ -47,9 +55,9 @@ export async function loadComponent(path: string, senses: ISenses, config: Docum
 
     if (component.platforms?.length && component.setupPlatform) {
         // Setup platforms for this domain component
-        component.platforms.forEach((platform) => {
-            fetchPlatformConfig(config, platform, component).forEach((config) => {
-                component.setupPlatform?.call(component, platform, senses, config);
+        (config.contents as YAMLMap).items.forEach((platform) => {
+            fetchPlatformConfig(config, platform.key?.value, component).forEach((config) => {
+                component.setupPlatform?.call(component, platform.key?.value, senses, config);
             });
         });
     }

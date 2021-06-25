@@ -10,6 +10,7 @@ export type MqttConnectListener = (mqtt: MqttClient) => void;
 declare interface EventBus {
     emit(event: "start", senses: ISenses): boolean;
     emit(event: "mqtt.connect", mqtt: MqttClient): boolean;
+    emit(event: "mqtt.message", topic: string, message: string): boolean;
     emit(event: "device.add", ...args: Parameters<DeviceListener>): boolean;
     emit(event: "device.state_update", ...args: Parameters<DeviceListener>): boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,6 +18,7 @@ declare interface EventBus {
 
     on(event: "start", listener: SensesListener): this;
     on(event: "mqtt.connect", listener: MqttConnectListener): this;
+    on(event: "mqtt.message", listener: (topic: string, message: string) => void): this;
     on(event: "device.add", listener: DeviceListener): this;
     on(event: "device.state_update", listener: DeviceListener): this;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
