@@ -2,6 +2,7 @@ type PlatformType = "rest" | "ws-events" | "zwave" | "modbus" | "zigbee" | "ip" 
 
 type Handshake = {
     uid: string;
+    alias?: string;
     type: string;
     name: string;
     product: string;
@@ -13,7 +14,7 @@ type Handshake = {
     firmwareVersion?: string;
     available: boolean;
     keepalive: boolean;
-    keepaliveInterval: number;
+    keepaliveTimeout: number;
     description?: string;
     comm?: CommChannel[];
     state?: Record<string, unknown>;
@@ -29,7 +30,8 @@ type Handshake = {
 
 export type CommChannel = {
     topic: string;
-    type: "state" | "command" | "availability";
+    type: "state" | "set" | "availability" | "fetch";
+    payload?: unknown;
 };
 
 export type DeviceType = {

@@ -1,11 +1,20 @@
-import consola from "consola";
+import consola, { Consola } from "consola";
 import EventEmitter from "events";
 import { MqttClient } from "mqtt";
 import Handshake from "./Handshake";
 
-export default class Discovery extends EventEmitter {
+declare interface Discovery {
+    on(event: "handshake", listener: (shake: Handshake, timestamp: Date) => void): this;
+    on(event: "alive", listener: (uid: string, timestamp: Date) => void): this;
+    on(event: "death", listener: (uid: string, timestamp: Date) => void): this;
+    on(event: "subscribed", listener: () => void): this;
+    on(event: "handshakeSent", listener: (shake: Handshake, timestamp: Date) => void): this;
+}
+
+class Discovery extends EventEmitter {
     private _mqtt: MqttClient;
     private _handshakeFactory: () => Handshake;
+    private _logger: Consola;
 
     constructor(mqtt: MqttClient, handshakeFactory: () => Handshake) {
         super();
@@ -13,15 +22,17 @@ export default class Discovery extends EventEmitter {
         this._mqtt.on("message", this._onMessage.bind(this));
         this._mqtt.on("connect", this._onConnect.bind(this));
         this._handshakeFactory = handshakeFactory;
+        this._logger = consola.withScope("discovery");
     }
 
     private _onConnect() {
         this._mqtt.subscribe(["discovery/+", `discovery/+/${this.getUid()}`], (err) => {
             if (err) {
-                consola.error("An error occured while subscibing discovery topic:", err);
+                this._logger.error("An error occured while subscibing discovery topic:", err);
                 return;
             }
 
+            this.emit("subscribed");
             this.handshake();
         });
     }
@@ -31,10 +42,19 @@ export default class Discovery extends EventEmitter {
             return;
         }
 
+        const timestamp = new Date();
         const split = topic.split("/");
         const discoveryType = split[1];
 
         switch (discoveryType) {
+            case "alive":
+                this._logger.debug(`Got keep-alive packet from '${message}'`);
+                this.emit("alive", message.toString(), timestamp);
+                break;
+            case "death":
+                this._logger.debug(`Got death packet from '${message}'`);
+                this.emit("death", message.toString(), timestamp);
+                break;
             case "handshake":
                 const shake = JSON.parse(message.toString()) as Handshake;
 
@@ -42,22 +62,26 @@ export default class Discovery extends EventEmitter {
                     return;
                 }
 
-                consola.debug(`Got handshake from '${shake.uid}' (expects reply: ${!!shake._thread})`);
-                this.emit("handshake", shake);
+                this._logger.debug(`Got handshake from '${shake.uid}' (expects reply: ${!!shake._thread})`);
+                this.emit("handshake", shake, timestamp);
+                this.emit("alive", shake.uid, timestamp);
 
                 // Reply on shake and introduce yourself if the shake has a thread
                 if (shake._thread) {
-                    consola.debug(`Sending handshake reply to '${shake.uid}' on topic '${shake._thread}'`);
+                    this._logger.debug(`Sending handshake reply to '${shake.uid}' on topic '${shake._thread}'`);
                     await this.handshake(false, shake._thread);
                 }
                 break;
             default:
-                break;
+                this._logger.debug("Unknown discovery packet:", discoveryType);
         }
     }
 
     getHandshakePacket(): Handshake {
-        return this._handshakeFactory();
+        const shakePacket = this._handshakeFactory();
+        delete shakePacket._thread;
+
+        return shakePacket;
     }
 
     getUid(): string {
@@ -68,8 +92,8 @@ export default class Discovery extends EventEmitter {
         return new Promise((resolve, reject) => {
             const shake = this.getHandshakePacket();
 
-            if (!expectsReply) {
-                delete shake._thread;
+            if (expectsReply) {
+                shake._thread = `discovery/handshake/${shake.uid}`;
             }
 
             this._mqtt.publish(topic || "discovery/handshake", JSON.stringify(shake), (err) => {
@@ -77,9 +101,12 @@ export default class Discovery extends EventEmitter {
                     return reject(new Error(`Error while sending handshake: ${err.message}`));
                 }
 
-                consola.debug(`Handshake sucessfully sent`);
+                this._logger.debug(`Handshake sucessfully sent (${this.getUid()})`);
+                this.emit("handshakeSent", shake, new Date());
                 return resolve();
             });
         });
     }
 }
+
+export default Discovery;
