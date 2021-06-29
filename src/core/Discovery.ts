@@ -64,7 +64,12 @@ class Discovery extends EventEmitter {
 
                 this._logger.debug(`Got handshake from '${shake.uid}' (expects reply: ${!!shake._thread})`);
                 this.emit("handshake", shake, timestamp);
-                this.emit("alive", shake.uid, timestamp);
+
+                if (shake.available) {
+                    this.emit("alive", shake.uid, timestamp);
+                } else {
+                    this.emit("death", shake.uid, timestamp);
+                }
 
                 // Reply on shake and introduce yourself if the shake has a thread
                 if (shake._thread) {

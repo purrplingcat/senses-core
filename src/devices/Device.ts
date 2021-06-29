@@ -9,6 +9,9 @@ export default abstract class Device<TState> implements Entity {
     public abstract setState(state: Partial<TState>): Promise<boolean> | boolean;
     public abstract getState(): Readonly<TState>;
     public abstract get available(): boolean;
+    public lastAlive?: Date;
+    public keepalive = false;
+    public timeout = 10000;
 
     public get entityId(): string {
         return `${this.type}.${this.name}`;

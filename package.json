@@ -26,6 +26,7 @@
   "dependencies": {
     "add": "^2.0.6",
     "consola": "^2.15.3",
+    "date-fns": "^2.22.1",
     "express": "^4.17.1",
     "mqtt": "^4.2.6",
     "uid-generator": "^2.0.0",

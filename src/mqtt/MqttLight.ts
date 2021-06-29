@@ -1,3 +1,4 @@
+import { differenceInMilliseconds } from "date-fns";
 import { MqttClient } from "mqtt";
 import Light, { LigthState } from "../light/Light";
 
@@ -8,11 +9,13 @@ export default class MqttLight extends Light {
     mqtt?: MqttClient;
     stateTopic: string;
     commandTopic: string;
+    fetchStateTopic: string;
 
-    constructor(stateTopic: string, commandTopic: string) {
+    constructor(stateTopic: string, commandTopic: string, fetchStateTopic: string) {
         super();
         this.stateTopic = stateTopic;
         this.commandTopic = commandTopic;
+        this.fetchStateTopic = fetchStateTopic;
     }
 
     private _publish<TPayload>(topic: string, payload: TPayload) {
@@ -50,6 +53,10 @@ export default class MqttLight extends Light {
         return true;
     }
 
+    requestState(): void {
+        this._publish(this.fetchStateTopic, null);
+    }
+
     public onMqttMessage(message: string): void {
         const payload = JSON.parse(message);
 
@@ -67,6 +74,10 @@ export default class MqttLight extends Light {
     }
 
     public get available(): boolean {
+        if (this.keepalive) {
+            return !!this.lastAlive && differenceInMilliseconds(new Date(), this.lastAlive) < this.timeout;
+        }
+
         return true;
     }
 

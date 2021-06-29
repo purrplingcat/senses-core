@@ -49,7 +49,7 @@ export function decodeDeviceType(type: string): DeviceType {
         mimeType: mainSplit[0]?.trim() || "",
         kind: mimeSplit[0]?.trim() || "",
         type: mimeSplit[1]?.trim() || "",
-        class: mainSplit[1].trim(),
+        class: mainSplit[1]?.trim(),
     };
 }
 

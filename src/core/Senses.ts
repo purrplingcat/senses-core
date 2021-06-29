@@ -16,6 +16,7 @@ export interface ISenses {
     devices: Device<unknown>[];
     services: IService[];
     hasDevice(uidOrEntityId: string): boolean;
+    fetchDevice(uidOrEntityId: string): Device<unknown>;
     addDevice<TState>(device: Device<TState>): void;
     addService(service: IService): void;
     callService<TParams>(name: string, params: TParams): Promise<boolean>;
@@ -67,6 +68,16 @@ export class Senses implements ISenses {
 
     hasDevice(uidOrEntityId: string): boolean {
         return !!this.devices.find((d) => d.uid === uidOrEntityId || d.entityId === uidOrEntityId);
+    }
+
+    fetchDevice(uidOrEntityId: string): Device<unknown> {
+        const device = this.devices.find((d) => d.uid === uidOrEntityId || d.entityId === uidOrEntityId);
+
+        if (!device) {
+            throw new Error(`Device '${uidOrEntityId}' not found`);
+        }
+
+        return device;
     }
 
     addDevice<TState>(device: Device<TState>): void {

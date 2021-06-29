@@ -11,6 +11,9 @@ function deviceMapper(device: Device<unknown>) {
         type: device.type,
         title: device.title,
         available: device.available,
+        lastAlive: device.lastAlive,
+        keepalive: device.keepalive,
+        timeout: device.timeout,
         state: device.getState(),
         extraAttrs: device.getExtraAttrs(),
     };
