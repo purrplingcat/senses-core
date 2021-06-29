@@ -1,41 +1,57 @@
-import EventBus from "../core/EventBus";
-import TurnableDevice from "../devices/TurnableDevice";
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+import MqttDevice from "../mqtt/MqttDevice";
+
+const positive = (num: number) => (num >= 0 ? Number(num) : 0);
+const int = (num: number) => parseInt(Number(num).toString());
 
 export interface LigthState {
     state: "on" | "off" | "unknown";
-    brightness?: number;
-    rgbColor?: [number, number, number]; // rgb
-    colorTemp?: number;
-    effect?: number;
+    brightness: number;
+    rgbColor: [number, number, number]; // rgb
+    colorTemp: number;
+    effect: number;
 }
 
 export enum LightFeatures {
     SUPPORT_COLOR = "color",
     SUPPORT_BRIGHTNESS = "brightness",
     SUPPORT_COLOR_TEMP = "colorTemp",
+    SUPPORT_EFFECTS = "effects",
 }
 
-export default abstract class Light extends TurnableDevice<LigthState> implements LigthState {
-    public class?: string;
-    public eventbus?: EventBus;
+export default class Light extends MqttDevice implements LigthState {
     type = "light";
     state: "on" | "off" | "unknown" = "unknown";
-    brightness?: number;
-    rgbColor?: [number, number, number];
-    colorTemp?: number;
-    effect?: number;
+    brightness = 0;
+    colorTemp = 0;
+    effect = 0;
+    rgbColor: [number, number, number] = [0, 0, 0];
     features: LightFeatures[] = [];
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public setState(state: Partial<LigthState>): boolean | Promise<boolean> {
-        return false;
-    }
+    async setState(state: Partial<LigthState>): Promise<boolean> {
+        const message: Record<string, number | string | boolean> = {};
 
-    public getExtraAttrs(): Record<string, unknown> {
-        return {
-            class: this.class || null,
-            features: this.features,
-        };
+        if (state.state) {
+            message.switch = state.state === "on" ? 1 : 0;
+        }
+
+        if (state.brightness) {
+            message.brightness = state.brightness;
+        }
+
+        if (state.colorTemp) {
+            message.colorTemp = state.colorTemp;
+        }
+
+        if (state.rgbColor) {
+            message.r = positive(state.rgbColor[0] || 0);
+            message.g = positive(state.rgbColor[1] || 0);
+            message.b = positive(state.rgbColor[2] || 0);
+        }
+
+        this._publish(this.commandTopic, message);
+
+        return true;
     }
 
     public getState(): Readonly<LigthState> {
@@ -48,29 +64,15 @@ export default abstract class Light extends TurnableDevice<LigthState> implement
         });
     }
 
-    public turnOn(): Promise<boolean> | boolean {
-        return false;
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected _retrieveState(payload: any): void {
+        this.state = payload.state ?? MqttDevice.stateNumberToStr(payload.switch);
+        this.brightness = payload.brightness;
+        this.effect = int(payload.effect);
+        this.colorTemp = payload.colorTemp;
 
-    public turnOff(): Promise<boolean> | boolean {
-        return false;
-    }
-
-    public async push(params: Partial<LigthState>): Promise<boolean> {
-        if (!params) {
-            throw new Error("Missing parameters");
+        if (payload.r && payload.g && payload.b) {
+            this.rgbColor = [int(payload.r), int(payload.g), int(payload.b)];
         }
-
-        delete params.state;
-
-        if (!Object.keys(params).length) {
-            return false;
-        }
-
-        await this.setState(params);
-
-        return true;
     }
-
-    protected _pushToPhysicalLight?(params: Partial<LigthState>): Promise<void>;
 }

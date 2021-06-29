@@ -2,16 +2,24 @@ import consola, { Consola } from "consola";
 import Entity from "../core/Entity";
 
 export default abstract class Device<TState> implements Entity {
-    public title?: string;
-    public uid?: string;
-    public name = "";
-    public type = "";
-    public abstract setState(state: Partial<TState>): Promise<boolean> | boolean;
-    public abstract getState(): Readonly<TState>;
-    public abstract get available(): boolean;
-    public lastAlive?: Date;
-    public keepalive = false;
-    public timeout = 10000;
+    title?: string;
+    uid?: string;
+    name = "";
+    type = "";
+    lastAlive?: Date;
+    keepalive = false;
+    timeout = 10000;
+    class: string | null = null;
+    features: string[] = [];
+    product?: string;
+    vendor?: string;
+    model?: string;
+    serialNumber?: string;
+    revision?: string;
+
+    abstract setState(state: Partial<TState>): Promise<boolean> | boolean;
+    abstract getState(): Readonly<TState>;
+    abstract get available(): boolean;
 
     public get entityId(): string {
         return `${this.type}.${this.name}`;
@@ -21,7 +29,15 @@ export default abstract class Device<TState> implements Entity {
         return consola.withScope(this.entityId);
     }
 
-    getExtraAttrs(): Record<string, unknown> | null {
-        return null;
+    public getExtraAttrs(): Record<string, unknown> {
+        return {
+            class: this.class || null,
+            features: this.features,
+            product: this.product,
+            vendor: this.vendor,
+            serialNumber: this.serialNumber,
+            model: this.model,
+            revision: this.revision,
+        };
     }
 }

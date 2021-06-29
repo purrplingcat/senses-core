@@ -1,12 +1,11 @@
 import consola from "consola";
 import mqtt from "mqtt";
 import UIDGenerator from "uid-generator";
-import MqttLight from "./MqttLight";
 import { ISenses } from "../core/Senses";
 import { YAMLMap } from "yaml/types";
 import Handshake, { decodeDeviceType, DeviceType } from "../core/Handshake";
-import Device from "../devices/Device";
 import Light from "../light/Light";
+import MqttDevice from "./MqttDevice";
 
 export const name = "mqtt";
 export const domain = "mqtt";
@@ -41,17 +40,20 @@ export function setup(senses: ISenses, config: YAMLMap): void {
     senses.eventbus.on("discovery.handshake", (shake: Handshake) => {
         const type = decodeDeviceType(shake.type || "");
 
-        if (type.mimeType !== "device/light") {
+        if (type.kind !== "device") {
             return;
         }
 
         if (senses.hasDevice(shake.uid)) {
-            const device = senses.fetchDevice(shake.uid) as MqttLight;
+            const device = senses.fetchDevice(shake.uid);
 
-            updateDeviceInfo(device, shake, type);
-            consola.info(`Updated device ${device.uid}`);
+            if (device instanceof MqttDevice) {
+                updateDeviceInfo(device, shake, type);
+                device.requestState();
+                consola.info(`Updated device ${device.uid}`);
+            }
 
-            return device.requestState();
+            return;
         }
 
         const light = registerNewDevice(senses, shake, type);
@@ -64,67 +66,79 @@ function registerNewDevice(senses: ISenses, shake: Handshake, type: DeviceType) 
         throw new Error("MQTT client is not established to add device!");
     }
 
-    const light = createDevice(senses, shake) as MqttLight;
-    updateDeviceInfo(light, shake, type);
+    const device = createDevice(shake, type);
+    updateDeviceInfo(device, shake, type);
 
-    light.mqtt = senses.mqtt;
-    light.mqtt.subscribe(light.stateTopic, (err, granted) => {
+    device.mqtt = senses.mqtt;
+    device.mqtt.subscribe(device.stateTopic, (err, granted) => {
         if (!err) {
-            light.requestState();
+            device.requestState();
             consola.trace(granted);
         }
     });
 
     senses.eventbus.on("mqtt.message", (topic: string, message: string) => {
-        if (topic === light.stateTopic) {
-            light.onMqttMessage(message);
+        if (topic === device.stateTopic) {
+            device.onMqttMessage(message);
         }
     });
 
-    if (light.keepalive) {
+    if (device.keepalive) {
         senses.eventbus.on("discovery.alive", (uid: string, stamp: Date) => {
-            if (light.uid === uid) {
-                light.lastAlive = stamp;
-                consola.debug(`${light.uid} updated their last active time`);
+            if (device.uid === uid) {
+                device.lastAlive = stamp;
+                consola.debug(`${device.uid} updated their last active time: ${stamp}`);
             }
         });
         senses.eventbus.on("discovery.death", (uid: string) => {
-            if (light.uid === uid) {
-                light.lastAlive = undefined;
-                console.log(light.lastAlive);
-                consola.debug(`${light.uid} is dead now`);
+            if (device.uid === uid) {
+                device.lastAlive = undefined;
+                consola.debug(`${device.uid} is dead now`);
             }
         });
     }
 
-    senses.addDevice(light);
+    senses.addDevice(device);
 
-    return light;
+    return device;
 }
 
-function createDevice(senses: ISenses, shake: Handshake): Device<unknown> {
+function createDevice(shake: Handshake, type: DeviceType): MqttDevice {
     const stateTopic = shake.comm?.find((c) => c.type === "state")?.topic || `${shake.uid}/state`;
     const setTopic = shake.comm?.find((c) => c.type === "set")?.topic || `${shake.uid}/set`;
     const getTopic = shake.comm?.find((c) => c.type === "fetch")?.topic || `${shake.uid}/get`;
 
-    return new MqttLight(stateTopic, setTopic, getTopic);
+    switch (type.type) {
+        case "light":
+            return new Light(stateTopic, setTopic, getTopic);
+        default:
+            const generic = new Light(stateTopic, setTopic, getTopic);
+            generic.type = "generic";
+            consola.info(`Unknown device type ${type.type}: Fallback to generic device`);
+
+            return generic;
+    }
 }
 
-function updateDeviceInfo(light: MqttLight, shake: Handshake, type: DeviceType) {
+function updateDeviceInfo(device: MqttDevice, shake: Handshake, type: DeviceType) {
     const stateTopic = shake.comm?.find((c) => c.type === "state")?.topic || `${shake.uid}/state`;
     const setTopic = shake.comm?.find((c) => c.type === "set")?.topic || `${shake.uid}/set`;
     const getTopic = shake.comm?.find((c) => c.type === "fetch")?.topic || `${shake.uid}/get`;
 
-    light.uid = shake.uid;
-    light.name = shake.alias || encodeEntityName(shake.name);
-    light.title = shake.name;
-    light.class = type.class;
-    light.features = asArray(shake.features);
-    light.keepalive = shake.keepalive;
-    light.timeout = shake.keepaliveTimeout;
-    light.stateTopic = stateTopic;
-    light.commandTopic = setTopic;
-    light.fetchStateTopic = getTopic;
+    device.uid = shake.uid;
+    device.name = shake.alias || encodeEntityName(shake.name);
+    device.title = shake.name;
+    device.class = type.class;
+    device.features = asArray(shake.features);
+    device.keepalive = shake.keepalive;
+    device.timeout = shake.keepaliveTimeout;
+    device.stateTopic = stateTopic;
+    device.commandTopic = setTopic;
+    device.fetchStateTopic = getTopic;
+    device.product = shake.product;
+    device.vendor = shake.vendor;
+    device.serialNumber = shake.serialNo;
+    device.model = shake.model;
 }
 
 export function setupPlatform(platform: string, senses: ISenses, config: YAMLMap): void | Promise<void> {
@@ -133,7 +147,7 @@ export function setupPlatform(platform: string, senses: ISenses, config: YAMLMap
     }
 
     const generator = new UIDGenerator();
-    const light = new MqttLight(config.get("stateTopic"), config.get("commandTopic"), config.get("fetchStateTopic"));
+    const light = new Light(config.get("stateTopic"), config.get("commandTopic"), config.get("fetchStateTopic"));
 
     light.name = config.get("name");
     light.uid = `Q-${light.name}-${generator.generateSync()}}`;
