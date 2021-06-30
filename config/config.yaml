@@ -6,6 +6,9 @@ http:
 mqtt:
   brokerUrl: mqtt://127.0.0.1
 
+expose:
+  enabled: yes
+
 test: !include lol
 
 light:

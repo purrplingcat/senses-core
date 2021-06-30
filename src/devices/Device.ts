@@ -10,6 +10,7 @@ export default abstract class Device<TState> implements Entity {
     keepalive = false;
     timeout = 10000;
     class: string | null = null;
+    room: string | null = null;
     features: string[] = [];
     product?: string;
     vendor?: string;

@@ -4,7 +4,7 @@ import yaml from "yaml";
 import { Senses } from "./core/Senses";
 import { loadComponents } from "./core/loader";
 
-const components = [__dirname + "/http", __dirname + "/mqtt", __dirname + "/light"];
+const components = [__dirname + "/http", __dirname + "/mqtt", __dirname + "/light", __dirname + "/exposed"];
 
 export async function setupSenses(configFile: string, debug: boolean): Promise<Senses> {
     consola.info(`Parsing configuration file: ${configFile} ...`);

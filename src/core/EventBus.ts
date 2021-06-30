@@ -1,3 +1,4 @@
+import consolaGlobalInstance from "consola";
 import EventEmitter from "events";
 import { MqttClient } from "mqtt";
 import Device from "../devices/Device";
@@ -31,6 +32,11 @@ class EventBus extends EventEmitter {
     constructor(senses: ISenses) {
         super();
         this.senses = senses;
+    }
+
+    emit(event: string, ...args: any[]): boolean {
+        consolaGlobalInstance.withScope("eventbus").trace(`Emitting event ${event}`);
+        return super.emit(event, ...args);
     }
 }
 

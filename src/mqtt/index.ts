@@ -70,6 +70,7 @@ function registerNewDevice(senses: ISenses, shake: Handshake, type: DeviceType) 
     updateDeviceInfo(device, shake, type);
 
     device.mqtt = senses.mqtt;
+    device.eventbus = senses.eventbus;
     device.mqtt.subscribe(device.stateTopic, (err, granted) => {
         if (!err) {
             device.requestState();
@@ -126,7 +127,7 @@ function updateDeviceInfo(device: MqttDevice, shake: Handshake, type: DeviceType
     const getTopic = shake.comm?.find((c) => c.type === "fetch")?.topic || `${shake.uid}/get`;
 
     device.uid = shake.uid;
-    device.name = shake.alias || encodeEntityName(shake.name);
+    device.name = shake.alias || shake.uid;
     device.title = shake.name;
     device.class = type.class;
     device.features = asArray(shake.features);

@@ -15,6 +15,8 @@ export interface ISenses {
     http?: Application;
     devices: Device<unknown>[];
     services: IService[];
+    domain: string;
+    name: string;
     hasDevice(uidOrEntityId: string): boolean;
     fetchDevice(uidOrEntityId: string): Device<unknown>;
     addDevice<TState>(device: Device<TState>): void;

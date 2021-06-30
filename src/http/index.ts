@@ -1,4 +1,5 @@
 import consola from "consola";
+import cors from "cors";
 import express, { Application, Request, Response } from "express";
 import http from "http";
 import { YAMLMap } from "yaml/types";
@@ -13,6 +14,7 @@ function setupHttp(senses: ISenses): Application {
         res.type("text/plain").status(200).send("Senses server is running.\nREST: /api\nWS: /ws");
 
     app.senses = senses;
+    app.use(cors());
     app.use(express.json());
     app.use("/api", routes);
     app.get("/", intro);

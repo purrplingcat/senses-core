@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+import ITurnableDevice from "../devices/TurnableDevice";
 import MqttDevice from "../mqtt/MqttDevice";
 
 const positive = (num: number) => (num >= 0 ? Number(num) : 0);
@@ -19,7 +20,7 @@ export enum LightFeatures {
     SUPPORT_EFFECTS = "effects",
 }
 
-export default class Light extends MqttDevice implements LigthState {
+export default class Light extends MqttDevice implements LigthState, ITurnableDevice {
     type = "light";
     state: "on" | "off" | "unknown" = "unknown";
     brightness = 0;
@@ -62,6 +63,13 @@ export default class Light extends MqttDevice implements LigthState {
             rgbColor: this.rgbColor,
             effect: this.effect,
         });
+    }
+
+    turnOn(): boolean | Promise<boolean> {
+        throw new Error("Method not implemented.");
+    }
+    turnOff(): boolean | Promise<boolean> {
+        throw new Error("Method not implemented.");
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

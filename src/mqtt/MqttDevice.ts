@@ -17,13 +17,22 @@ export default abstract class MqttDevice extends Device<unknown> {
         this.fetchStateTopic = fetchStateTopic;
     }
 
-    protected _publish<TPayload>(topic: string, payload: TPayload): void {
-        if (!this.mqtt?.connected) {
-            this._logger.error("Can't publish mqtt message: Mqtt connection is not established");
-            return;
-        }
+    protected _publish<TPayload>(topic: string, payload: TPayload): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (!this.mqtt?.connected) {
+                this._logger.error("Can't publish mqtt message: Mqtt connection is not established");
+                return;
+            }
 
-        this.mqtt.publish(topic, JSON.stringify(payload));
+            this.mqtt.publish(topic, JSON.stringify(payload), (err) => {
+                if (err) {
+                    reject(err);
+                }
+
+                this._logger.trace("Published mqtt message", topic, payload);
+                resolve();
+            });
+        });
     }
 
     requestState(): void {
