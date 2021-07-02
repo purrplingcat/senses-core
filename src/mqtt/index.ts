@@ -88,9 +88,12 @@ function registerNewDevice(senses: ISenses, shake: Handshake, type: DeviceType) 
             }
         });
         senses.eventbus.on("discovery.death", (uid: string) => {
-            if (device.uid === uid) {
+            if (device.uid === uid && device.lastAlive) {
                 device.lastAlive = undefined;
-                consola.debug(`${device.uid} is dead now`);
+                consola.debug(`${device.uid} is dead now.`);
+                senses.devices
+                    .filter((d) => d.via && d.via === device.uid)
+                    .forEach((d) => senses.eventbus.emit("discovery.death", d.uid, new Date(), "cascade"));
             }
         });
     }
@@ -138,6 +141,7 @@ function updateDeviceInfo(device: MqttDevice, shake: Handshake, type: DeviceType
     device.model = shake.model;
     device.description = shake.description;
     device.tags = shake.tags || [];
+    device.via = shake.via;
 }
 
 export function setupPlatform(platform: string, senses: ISenses, config: YAMLMap): void | Promise<void> {

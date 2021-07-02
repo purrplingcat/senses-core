@@ -12,13 +12,8 @@ import typeDefs from "./schema";
 import createQueryResolvers, { deviceMapper } from "./resolvers";
 
 export const name = "http";
-export const dependencies = ["mqtt"];
 
 function setupExpressApp(senses: ISenses): Application {
-    if (!senses.mqtt) {
-        throw new Error("Mqtt client was not created");
-    }
-
     const app = express();
     const intro = (req: Request, res: Response) =>
         res.type("text/plain").status(200).send("Senses server is running.\nREST: /api\nWS: /ws");
@@ -36,7 +31,6 @@ function setupGraphQl(senses: ISenses): ApolloServer {
     const pubsub = new PubSub();
 
     senses.eventbus.on("device.state_update", (device) => {
-        console.log(deviceMapper(device));
         pubsub.publish("device.update", { deviceUpdated: deviceMapper(device) });
     });
 

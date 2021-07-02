@@ -23,6 +23,7 @@ export function deviceMapper(device: Device<unknown>) {
         state: device.getState(),
         features: device.features,
         tags: device.tags,
+        via: device.via,
     };
 }
 

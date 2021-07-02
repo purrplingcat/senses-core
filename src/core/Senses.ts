@@ -133,7 +133,12 @@ export class Senses implements ISenses {
 
         this._discovery = new Discovery(this.mqtt, () => this.getHandshakePacket());
         this._discovery.on("alive", (uid, stamp) => this.eventbus.emit("discovery.alive", uid, stamp, "mqtt"));
-        this._discovery.on("death", (uid, stamp) => this.eventbus.emit("discovery.death", uid, stamp, "mqtt"));
+        this._discovery.on("death", (uid, stamp) => {
+            this.eventbus.emit("discovery.death", uid, stamp, "mqtt");
+            this.devices
+                .filter((d) => d.via && d.via === uid && d.available)
+                .forEach((d) => this.eventbus.emit("discovery.death", d.uid, new Date(), "cascade"));
+        });
         this._discovery.on("handshake", (shake, stamp) =>
             this.eventbus.emit("discovery.handshake", shake, stamp, "mqtt"),
         );

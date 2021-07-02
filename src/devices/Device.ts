@@ -19,6 +19,7 @@ export default abstract class Device<TState> implements Entity {
     revision?: string;
     description?: string;
     tags: string[] = [];
+    via?: string;
 
     abstract setState(state: Partial<TState>): Promise<boolean> | boolean;
     abstract getState(): Readonly<TState>;

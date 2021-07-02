@@ -28,6 +28,7 @@ export default gql`
         extraAttrs: JSON
         features: [String]
         tags: [String]
+        via: ID
     }
 
     type Query {
