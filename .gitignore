@@ -1,2 +1,5 @@
+*.log
 lib/
+dist/
+build/
 node_modules/

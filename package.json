@@ -25,13 +25,20 @@
     "typescript": "^4.2.4"
   },
   "dependencies": {
+    "@bmd-studio/graphql-mqtt-subscriptions": "^1.4.2",
     "add": "^2.0.6",
+    "apollo-server-express": "^2.25.2",
     "consola": "^2.15.3",
     "cors": "^2.8.5",
     "date-fns": "^2.22.1",
     "express": "^4.17.1",
+    "express-graphql": "^0.12.0",
+    "graphql": "^15.5.1",
+    "graphql-mqtt-subscriptions": "^1.2.0",
+    "graphql-type-json": "^0.3.2",
     "mqtt": "^4.2.6",
     "mqtt-pattern": "^1.2.0",
+    "query": "protobi/query",
     "uid-generator": "^2.0.0",
     "yaml": "^1.10.2",
     "yarn": "^1.22.10"

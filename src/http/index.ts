@@ -1,14 +1,24 @@
 import consola from "consola";
 import cors from "cors";
 import express, { Application, Request, Response } from "express";
+import { ApolloServer, IResolvers, PubSub } from "apollo-server-express";
+import { GraphQLJSONObject } from "graphql-type-json";
 import http from "http";
 import { YAMLMap } from "yaml/types";
 import { ISenses } from "../core/Senses";
+import GraphQLDate from "./scalars/date";
 import routes from "./routes";
+import typeDefs from "./schema";
+import createQueryResolvers, { deviceMapper } from "./resolvers";
 
 export const name = "http";
+export const dependencies = ["mqtt"];
 
-function setupHttp(senses: ISenses): Application {
+function setupExpressApp(senses: ISenses): Application {
+    if (!senses.mqtt) {
+        throw new Error("Mqtt client was not created");
+    }
+
     const app = express();
     const intro = (req: Request, res: Response) =>
         res.type("text/plain").status(200).send("Senses server is running.\nREST: /api\nWS: /ws");
@@ -22,10 +32,38 @@ function setupHttp(senses: ISenses): Application {
     return app;
 }
 
+function setupGraphQl(senses: ISenses): ApolloServer {
+    const pubsub = new PubSub();
+
+    senses.eventbus.on("device.state_update", (device) => {
+        console.log(deviceMapper(device));
+        pubsub.publish("device.update", { deviceUpdated: deviceMapper(device) });
+    });
+
+    const resolvers: IResolvers = {
+        Date: GraphQLDate,
+        JSON: GraphQLJSONObject,
+        Query: createQueryResolvers(senses),
+        Subscription: {
+            deviceUpdated: {
+                subscribe: () => pubsub.asyncIterator(["device.update"]),
+            },
+        },
+    };
+
+    return new ApolloServer({ typeDefs, resolvers });
+}
+
 export function setup(senses: ISenses, config: YAMLMap): void {
-    senses.http = setupHttp(senses);
+    const graphQl = setupGraphQl(senses);
+    const app = setupExpressApp(senses);
+    const server = http.createServer(app);
+
+    graphQl.applyMiddleware({ app });
+    graphQl.installSubscriptionHandlers(server);
+    senses.http = app;
     senses.eventbus.on("start", () => {
-        http.createServer(senses.http).listen(config.get("port") ?? 8080, () =>
+        server.listen(config.get("port") ?? 8080, () =>
             consola.success("Http server listening on port http://localhost:8080"),
         );
     });

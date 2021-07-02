@@ -19,10 +19,6 @@ function asArray<T>(val: unknown): T[] {
     return Array.from(val as T[]);
 }
 
-function encodeEntityName(name: string): string {
-    return encodeURIComponent(name.toLowerCase().replace(" ", "_"));
-}
-
 function createMqttClient(brokerUrl: string) {
     consola.info("Connecting to mqtt broker ...");
     const mqttClient = mqtt.connect(brokerUrl);
@@ -140,6 +136,8 @@ function updateDeviceInfo(device: MqttDevice, shake: Handshake, type: DeviceType
     device.vendor = shake.vendor;
     device.serialNumber = shake.serialNo;
     device.model = shake.model;
+    device.description = shake.description;
+    device.tags = shake.tags || [];
 }
 
 export function setupPlatform(platform: string, senses: ISenses, config: YAMLMap): void | Promise<void> {

@@ -15,7 +15,7 @@ function deviceMapper(device: Device<unknown>) {
         lastAlive: device.lastAlive,
         keepalive: device.keepalive,
         timeout: device.timeout,
-        turable: isTurnableDevice(device),
+        turnable: isTurnableDevice(device),
         extraAttrs: device.getExtraAttrs(),
     };
 }

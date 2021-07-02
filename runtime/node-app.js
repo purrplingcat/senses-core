@@ -10,6 +10,8 @@ global = typeof global === "object" ? global : typeof window === "object" ? wind
 global.NODE_APP = true;
 global.application = scope;
 
+require("./polyfills");
+
 function loadAssembly(entrypoint) {
     return require(process.cwd() + "/" + entrypoint);
 }

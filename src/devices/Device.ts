@@ -3,9 +3,9 @@ import Entity from "../core/Entity";
 
 export default abstract class Device<TState> implements Entity {
     title?: string;
-    uid?: string;
+    uid = "";
     name = "";
-    type = "";
+    type = "generic";
     lastAlive?: Date;
     keepalive = false;
     timeout = 10000;
@@ -17,6 +17,8 @@ export default abstract class Device<TState> implements Entity {
     model?: string;
     serialNumber?: string;
     revision?: string;
+    description?: string;
+    tags: string[] = [];
 
     abstract setState(state: Partial<TState>): Promise<boolean> | boolean;
     abstract getState(): Readonly<TState>;
