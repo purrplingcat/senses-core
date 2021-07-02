@@ -9,6 +9,9 @@ mqtt:
 expose:
   enabled: yes
 
+watcher:
+  interval: 1000
+
 test: !include lol
 
 light:

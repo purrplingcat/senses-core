@@ -17,6 +17,7 @@ export interface ISenses {
     services: IService[];
     domain: string;
     name: string;
+    states: Record<string, boolean>;
     hasDevice(uidOrEntityId: string): boolean;
     fetchDevice(uidOrEntityId: string): Device<unknown>;
     addDevice<TState>(device: Device<TState>): void;
@@ -31,19 +32,21 @@ export class Senses implements ISenses {
     eventbus: EventBus;
     mqtt?: MqttClient;
     http?: Application;
-    private _discovery?: Discovery;
+    states: Record<string, boolean>;
     devices: Device<unknown>[];
     services: IService[];
     domain: string;
     name: string;
     startAt: number;
     private _uid: string;
+    private _discovery?: Discovery;
 
     constructor(domain: string, name: string, debug = false) {
         this._uid = `AC-${domain}-senses-${process.env.NODE_INSTANCE_ID || 0}-${process.pid}-${Date.now()}`;
         this.eventbus = new EventBus(this);
         this.devices = [];
         this.services = [];
+        this.states = {};
         this.startAt = 0;
         this.domain = domain;
         this.name = name;
@@ -146,6 +149,10 @@ export class Senses implements ISenses {
         this.mqtt.on("error", (err) => {
             this.eventbus.emit("mqtt.error", err);
             consola.error(err);
+        });
+
+        this.eventbus.on("device.state_update", (device) => {
+            this.states[device.uid] = device.available;
         });
 
         consola.success("Senses assistant ready");

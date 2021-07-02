@@ -4,7 +4,7 @@ import yaml from "yaml";
 import { Senses } from "./core/Senses";
 import { loadComponents } from "./core/loader";
 
-const components = [__dirname + "/http", __dirname + "/mqtt", __dirname + "/light", __dirname + "/exposed"];
+const components = ["http", "mqtt", "light", "exposed", "watcher"].map((c) => __dirname + "/" + c);
 
 export async function setupSenses(configFile: string, debug: boolean): Promise<Senses> {
     if (debug) consola.info("Running in debug mode");
