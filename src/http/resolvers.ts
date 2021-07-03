@@ -1,3 +1,4 @@
+import { UserInputError } from "apollo-server-express";
 import { ISenses } from "../core/Senses";
 import Device from "../devices/Device";
 import { IRoom } from "../devices/Room";
@@ -53,7 +54,15 @@ export default function createQueryResolvers(senses: ISenses): Record<string, (p
 
             return devices;
         },
-        room: (_, args) => senses.rooms.find((r) => r.name === args.name),
+        room: (_, args) => {
+            const room = senses.rooms.find((r) => r.name === args.name);
+
+            if (!room) {
+                throw new UserInputError("Room nout found", { code: 404 });
+            }
+
+            return room;
+        },
         rooms: (_, args) => {
             const shouldBeFiltered = !!args.filter;
             const rooms = senses.rooms.map(roomMapper);

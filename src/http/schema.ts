@@ -41,9 +41,9 @@ export default gql`
 
     type Query {
         devices(filter: JSON): [Device]
-        device(uid: ID!): Device
+        device(uid: ID!): Device!
         rooms(filter: JSON): [Room]
-        room(name: String!): Room
+        room(name: String!): Room!
     }
 
     type Subscription {
