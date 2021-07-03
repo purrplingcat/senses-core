@@ -1,5 +1,6 @@
 import { ISenses } from "../core/Senses";
 import Device from "../devices/Device";
+import { IRoom } from "../devices/Room";
 import { isTurnableDevice } from "../devices/TurnableDevice";
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -27,9 +28,21 @@ export function deviceMapper(device: Device<unknown>) {
     };
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export function roomMapper(room: IRoom) {
+    return {
+        name: room.name,
+        title: room.title,
+        description: room.description,
+        deviceCount: room.devices.length,
+        icon: room.icon,
+    };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function createQueryResolvers(senses: ISenses): Record<string, (parent: any, args: any) => unknown> {
     return {
+        device: (_, args) => senses.devices.find((d) => d.uid === args.uid),
         devices: (_, args) => {
             const shouldBeFiltered = !!args.filter;
             let devices = senses.devices.map(deviceMapper);
@@ -40,6 +53,16 @@ export default function createQueryResolvers(senses: ISenses): Record<string, (p
 
             return devices;
         },
-        device: (_, args) => senses.devices.find((d) => d.uid === args.uid),
+        room: (_, args) => senses.rooms.find((r) => r.name === args.name),
+        rooms: (_, args) => {
+            const shouldBeFiltered = !!args.filter;
+            const rooms = senses.rooms.map(roomMapper);
+
+            if (shouldBeFiltered) {
+                return rooms.query(args.filter);
+            }
+
+            return rooms;
+        },
     };
 }

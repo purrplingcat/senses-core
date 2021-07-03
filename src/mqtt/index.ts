@@ -129,6 +129,7 @@ function updateDeviceInfo(device: MqttDevice, shake: Handshake, type: DeviceType
     device.name = shake.alias || shake.uid;
     device.title = shake.name;
     device.class = type.class;
+    device.room = shake.location || null;
     device.features = asArray(shake.features);
     device.keepalive = shake.keepalive;
     device.timeout = shake.keepaliveTimeout;
@@ -153,7 +154,7 @@ export function setupPlatform(platform: string, senses: ISenses, config: YAMLMap
     const light = new Light(config.get("stateTopic"), config.get("commandTopic"), config.get("fetchStateTopic"));
 
     light.name = config.get("name");
-    light.uid = `Q-${light.name}-${generator.generateSync()}}`;
+    light.uid = `${light.type}-${light.name}-${generator.generateSync()}}`;
     light.title = config.get("title") || light.name;
     light.class = config.get("class") || "light";
     light.features = asArray(config.get("features")?.toJSON());

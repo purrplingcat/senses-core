@@ -1,7 +1,7 @@
 import consola, { Consola } from "consola";
-import Entity from "../core/Entity";
+import Entity, { UniqueIdentity } from "../core/Entity";
 
-export default abstract class Device<TState> implements Entity {
+export default abstract class Device<TState> implements Entity, UniqueIdentity {
     title?: string;
     uid = "";
     name = "";

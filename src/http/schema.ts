@@ -11,7 +11,7 @@ export default gql`
     }
 
     type Device {
-        uid: ID
+        uid: ID!
         name: String
         type: String
         class: String
@@ -31,9 +31,19 @@ export default gql`
         via: ID
     }
 
+    type Room {
+        name: String!
+        title: String
+        icon: String
+        description: String
+        deviceCount: Int
+    }
+
     type Query {
         devices(filter: JSON): [Device]
         device(uid: ID!): Device
+        rooms(filter: JSON): [Room]
+        room(name: String!): Room
     }
 
     type Subscription {

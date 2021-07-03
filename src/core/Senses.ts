@@ -2,6 +2,7 @@ import consola from "consola";
 import { Application } from "express";
 import { MqttClient } from "mqtt";
 import Device from "../devices/Device";
+import { IRoom } from "../devices/Room";
 import Discovery from "./Discovery";
 import Entity from "./Entity";
 import EventBus from "./EventBus";
@@ -15,6 +16,7 @@ export interface ISenses {
     http?: Application;
     devices: Device<unknown>[];
     services: IService[];
+    rooms: IRoom[];
     domain: string;
     name: string;
     states: Record<string, boolean>;
@@ -22,6 +24,7 @@ export interface ISenses {
     fetchDevice(uidOrEntityId: string): Device<unknown>;
     addDevice<TState>(device: Device<TState>): void;
     addService(service: IService): void;
+    addRoom(room: IRoom): void;
     callService<TParams>(name: string, params: TParams): Promise<boolean>;
     getUid(): string;
     handshake(): void;
@@ -35,6 +38,7 @@ export class Senses implements ISenses {
     states: Record<string, boolean>;
     devices: Device<unknown>[];
     services: IService[];
+    rooms: IRoom[];
     domain: string;
     name: string;
     startAt: number;
@@ -46,6 +50,7 @@ export class Senses implements ISenses {
         this.eventbus = new EventBus(this);
         this.devices = [];
         this.services = [];
+        this.rooms = [];
         this.states = {};
         this.startAt = 0;
         this.domain = domain;
@@ -95,8 +100,18 @@ export class Senses implements ISenses {
         consola.debug(`Added device ${device.name} type ${device.type} (${device.constructor.name})`);
     }
 
+    addRoom(room: IRoom): void {
+        if (this.rooms.find((r) => r.name === room.name)) {
+            throw new Error(`Room with name '${room.name}' already exists`);
+        }
+
+        this.rooms.push(room);
+        this.eventbus.emit("room.add", room, this);
+        consola.debug("Registered new room:", room.name);
+    }
+
     getEntities(): Entity[] {
-        return [...this.devices];
+        return [...this.devices, ...this.rooms];
     }
 
     getUid(): string {
