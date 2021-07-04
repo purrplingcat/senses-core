@@ -31,12 +31,17 @@ light:
 room:
   - name: kitchen
     title: Kuchyně
-    icon: img/kitchen
-    entities:
-      - light.kitchen_light
-      - scene.kitchen_night
-  - name: .home
-
+    icon: rooms/kitchen
+  - name: bathroom
+    title: Koupelna
+    icon: rooms/bath
+  - name: bedroom
+    title: Ložnice
+    icon: rooms/bedroom
+  - name: relaxroom
+    title: Relaxační místnost
+    icon: rooms/livingroom
+  
 scene:
   - name: night
     title: Noc
