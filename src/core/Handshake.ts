@@ -18,12 +18,14 @@ type Handshake = {
     description?: string;
     comm?: CommChannel[];
     state?: Record<string, unknown>;
+    stateFormat?: "boolean" | "string" | "number" | "json";
     via?: string;
     platform?: PlatformType;
     features?: string[];
     tags?: string[];
     location?: string;
     additional?: unknown;
+    groups?: string[];
     _thread?: string;
     _version: "1.0";
 };
@@ -39,6 +41,7 @@ export type DeviceType = {
     kind: string;
     type: string;
     class: string;
+    fullQualifiedType: string;
 };
 
 export function decodeDeviceType(type: string): DeviceType {
@@ -50,6 +53,7 @@ export function decodeDeviceType(type: string): DeviceType {
         kind: mimeSplit[0]?.trim() || "",
         type: mimeSplit[1]?.trim() || "",
         class: mainSplit[1]?.trim(),
+        fullQualifiedType: type,
     };
 }
 

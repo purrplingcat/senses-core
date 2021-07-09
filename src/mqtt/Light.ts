@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import ITurnableDevice from "../devices/TurnableDevice";
-import MqttDevice from "../mqtt/MqttDevice";
+import MqttDevice from "./MqttDevice";
 
 const positive = (num: number) => (num >= 0 ? Number(num) : 0);
 const int = (num: number) => parseInt(Number(num).toString());
@@ -66,10 +66,10 @@ export default class Light extends MqttDevice implements LigthState, ITurnableDe
     }
 
     turnOn(): boolean | Promise<boolean> {
-        throw new Error("Method not implemented.");
+        return this.setState({ state: "on" });
     }
     turnOff(): boolean | Promise<boolean> {
-        throw new Error("Method not implemented.");
+        return this.setState({ state: "off" });
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

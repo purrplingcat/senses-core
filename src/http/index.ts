@@ -31,7 +31,7 @@ function setupGraphQl(senses: ISenses): ApolloServer {
     const pubsub = new PubSub();
 
     senses.eventbus.on("device.state_update", (device) => {
-        pubsub.publish("device.update", { deviceUpdated: deviceMapper(device) });
+        pubsub.publish("device.update", { deviceUpdated: deviceMapper.call(senses, device) });
     });
 
     const resolvers: IResolvers = {

@@ -28,6 +28,18 @@ light:
         payload_available: online
         payload_unavailable: offline
 
+sensor:
+  - name: temperature
+    title: Teplota
+    class: temperature
+    room: kitchen
+    platform: mqtt
+    groups: [room.kitchen]
+    stateTopic: device/roztoky/kitchen/heater
+    field: temperature
+    tags:
+      - main
+
 room:
   - name: kitchen
     title: Kuchyně

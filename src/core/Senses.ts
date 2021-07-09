@@ -2,6 +2,7 @@ import consola from "consola";
 import { Application } from "express";
 import { MqttClient } from "mqtt";
 import Device from "../devices/Device";
+import { IGroup } from "../devices/Group";
 import { IRoom } from "../devices/Room";
 import Discovery from "./Discovery";
 import Entity from "./Entity";
@@ -17,6 +18,7 @@ export interface ISenses {
     devices: Device<unknown>[];
     services: IService[];
     rooms: IRoom[];
+    groups: IGroup[];
     domain: string;
     name: string;
     states: Record<string, boolean>;
@@ -39,6 +41,7 @@ export class Senses implements ISenses {
     devices: Device<unknown>[];
     services: IService[];
     rooms: IRoom[];
+    groups: IGroup[];
     domain: string;
     name: string;
     startAt: number;
@@ -51,6 +54,7 @@ export class Senses implements ISenses {
         this.devices = [];
         this.services = [];
         this.rooms = [];
+        this.groups = [];
         this.states = {};
         this.startAt = 0;
         this.domain = domain;
@@ -73,11 +77,14 @@ export class Senses implements ISenses {
             throw new Error(`Can't call unknown service '${name}'`);
         }
 
-        return await service.call(params, this);
+        const result = await service.call(params, this);
+        this.eventbus.emit("service.called", service, params, result);
+
+        return result;
     }
 
     hasDevice(uidOrEntityId: string): boolean {
-        return !!this.devices.find((d) => d.uid === uidOrEntityId || d.entityId === uidOrEntityId);
+        return this.devices.find((d) => d.uid === uidOrEntityId || d.entityId === uidOrEntityId) != null;
     }
 
     fetchDevice(uidOrEntityId: string): Device<unknown> {
@@ -106,8 +113,19 @@ export class Senses implements ISenses {
         }
 
         this.rooms.push(room);
+        this.addGroup({ name: `room.${room.name}`, title: room.title, type: "room" });
         this.eventbus.emit("room.add", room, this);
         consola.debug("Registered new room:", room.name);
+    }
+
+    addGroup(group: IGroup): void {
+        if (this.groups.find((g) => g.name === group.name)) {
+            throw new Error(`Group with name '${group.name}' already exists`);
+        }
+
+        this.groups.push(group);
+        this.eventbus.emit("group.add", group, this);
+        consola.debug("Registered new group:", group.name);
     }
 
     getEntities(): Entity[] {

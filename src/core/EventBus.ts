@@ -3,10 +3,12 @@ import EventEmitter from "events";
 import { MqttClient } from "mqtt";
 import Device from "../devices/Device";
 import { ISenses } from "./Senses";
+import IService from "./Service";
 
-export type DeviceListener = (device: Device<unknown>, sense: ISenses) => void;
+export type DeviceListener = (device: Device<unknown>, senses: ISenses) => void;
 export type SensesListener = (senses: ISenses) => void;
 export type MqttConnectListener = (mqtt: MqttClient) => void;
+export type ServiceCallListener = (service: IService, params: unknown, result: boolean) => void;
 
 declare interface EventBus {
     emit(event: "start", senses: ISenses): boolean;
@@ -14,7 +16,7 @@ declare interface EventBus {
     emit(event: "mqtt.message", topic: string, message: string): boolean;
     emit(event: "device.add", ...args: Parameters<DeviceListener>): boolean;
     emit(event: "device.state_update", ...args: Parameters<DeviceListener>): boolean;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    emit(event: "service.called", ...args: Parameters<ServiceCallListener>): boolean;
     emit(event: string, ...args: any[]): boolean;
 
     on(event: "start", listener: SensesListener): this;
@@ -22,7 +24,7 @@ declare interface EventBus {
     on(event: "mqtt.message", listener: (topic: string, message: string) => void): this;
     on(event: "device.add", listener: DeviceListener): this;
     on(event: "device.state_update", listener: DeviceListener): this;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    on(event: "service.called", listener: ServiceCallListener): this;
     on(event: string, listener: (...args: any[]) => void): this;
 }
 

@@ -18,9 +18,11 @@ export default gql`
         title: String
         description: String
         room: String
+        groups: [Group]
         available: Boolean
         lastAlive: Date
         keepalive: Boolean
+        lastUpdate: Date
         timeout: Int
         turnable: Boolean
         turn: TurnState
@@ -37,6 +39,13 @@ export default gql`
         icon: String
         description: String
         deviceCount: Int
+    }
+
+    type Group {
+        name: String!
+        title: String
+        description: String
+        type: String!
     }
 
     type Query {

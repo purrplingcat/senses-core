@@ -1,11 +1,11 @@
 import { UserInputError } from "apollo-server-express";
-import { ISenses } from "../core/Senses";
+import { ISenses, Senses } from "../core/Senses";
 import Device from "../devices/Device";
 import { IRoom } from "../devices/Room";
 import { isTurnableDevice } from "../devices/TurnableDevice";
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function deviceMapper(device: Device<unknown>) {
+export function deviceMapper(this: ISenses, device: Device<unknown>) {
     return {
         uid: device.uid,
         entityId: device.entityId,
@@ -15,9 +15,11 @@ export function deviceMapper(device: Device<unknown>) {
         title: device.title,
         description: device.description,
         room: device.room,
+        groups: this.groups.filter((g) => device.groups.includes(g.name)),
         available: device.available,
         lastAlive: device.lastAlive,
         keepalive: device.keepalive,
+        lastUpdate: device.lastUpdate,
         timeout: device.timeout,
         turnable: isTurnableDevice(device),
         turn: isTurnableDevice(device) ? device.state : null,
@@ -45,8 +47,8 @@ export default function createQueryResolvers(senses: ISenses): Record<string, (p
     return {
         device: (_, args) => senses.devices.find((d) => d.uid === args.uid),
         devices: (_, args) => {
-            const shouldBeFiltered = !!args.filter;
-            let devices = senses.devices.map(deviceMapper);
+            const shouldBeFiltered = Boolean(args.filter);
+            let devices = senses.devices.map(deviceMapper.bind(senses));
 
             if (shouldBeFiltered) {
                 devices = devices.query(args.filter);
@@ -64,7 +66,7 @@ export default function createQueryResolvers(senses: ISenses): Record<string, (p
             return room;
         },
         rooms: (_, args) => {
-            const shouldBeFiltered = !!args.filter;
+            const shouldBeFiltered = Boolean(args.filter);
             const rooms = senses.rooms.map(roomMapper);
 
             if (shouldBeFiltered) {
