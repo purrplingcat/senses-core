@@ -1,12 +1,13 @@
 import Handshake from "../core/Handshake";
+import { ISenses } from "../core/Senses";
 import MqttDevice from "./MqttDevice";
 
 export default class Sensor extends MqttDevice {
     stateField: string;
     value: number;
 
-    constructor(stateTopic: string, getTopic: string, field = "value") {
-        super(stateTopic, "", getTopic);
+    constructor(senses: ISenses, stateTopic: string, getTopic: string, field = "value") {
+        super(senses, stateTopic, "", getTopic);
         this.value = 0;
         this.stateField = field;
         this.type = "sensor";

@@ -1,9 +1,8 @@
-import { YAMLMap } from "yaml/types";
+import { Document } from "yaml";
 import { ISenses } from "../core/Senses";
 import Room, { IRoom } from "../devices/Room";
 
 export const name = "room";
-export const domain = name;
 
 function createRoom(senses: ISenses, dirtyRoom: IRoom): Room {
     const room = new Room(dirtyRoom.name, senses);
@@ -11,8 +10,10 @@ function createRoom(senses: ISenses, dirtyRoom: IRoom): Room {
     return Object.assign(room, dirtyRoom);
 }
 
-export function setup(senses: ISenses, config: YAMLMap): void {
-    const rooms: IRoom[] = <IRoom[]>config.toJSON();
+export function setup(senses: ISenses, config: Document): void {
+    if (!config.has("room")) return;
+
+    const rooms: IRoom[] = <IRoom[]>config.get("room").toJSON();
 
     // We are loading it from config, check the type is necessary. (Don't trust user data)
     if (!Array.isArray(rooms)) {

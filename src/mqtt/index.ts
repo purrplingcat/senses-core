@@ -1,32 +1,17 @@
 import consola from "consola";
-import mqtt from "mqtt";
 import UIDGenerator from "uid-generator";
 import { ISenses } from "../core/Senses";
 import { YAMLMap } from "yaml/types";
-import Handshake, { decodeDeviceType, DeviceType } from "../core/Handshake";
-import Light from "./Light";
+import Handshake, { decodeDeviceType } from "../core/Handshake";
 import MqttDevice from "./MqttDevice";
-import Sensor from "./Sensor";
 import { asArray } from "../core/utils";
+import { registerNewDevice, updateDeviceInfo } from "../devices/utils";
 
 export const name = "mqtt";
 export const domain = "mqtt";
 export const platforms = ["light", "sensor"];
 
-function createMqttClient(brokerUrl: string) {
-    consola.info("Connecting to mqtt broker ...");
-    const mqttClient = mqtt.connect(brokerUrl);
-
-    mqttClient.on("connect", () => {
-        mqttClient.publish("senses/presence", "online");
-        consola.success("MQTT connection established");
-    });
-
-    return mqttClient;
-}
-
-export function setup(senses: ISenses, config: YAMLMap): void {
-    senses.mqtt = createMqttClient(config.get("brokerUrl"));
+export function setup(senses: ISenses): void {
     senses.eventbus.on("discovery.handshake", (shake: Handshake) => {
         const type = decodeDeviceType(shake.type || "");
 
@@ -68,70 +53,6 @@ export function setup(senses: ISenses, config: YAMLMap): void {
             consola.warn(`Can't register device ${shake.uid} via discovery:`, err);
         }
     });
-}
-
-function registerNewDevice(senses: ISenses, shake: Handshake, type: DeviceType) {
-    const device = createDevice(shake, type);
-    updateDeviceInfo(device, shake);
-
-    device.mqtt = senses.mqtt;
-    device.eventbus = senses.eventbus;
-
-    senses.eventbus.on("mqtt.message", (topic: string, message: string) => {
-        if (topic === device.stateTopic) {
-            device.onMqttMessage(message);
-        }
-    });
-
-    senses.eventbus.on("mqtt.connect", (mqtt) => {
-        if (mqtt.connected && !mqtt.disconnecting) {
-            device.subscribeTopics();
-            device.requestState();
-        }
-    });
-
-    if (device.keepalive) {
-        senses.eventbus.on("discovery.alive", (uid: string, stamp: Date) => {
-            if (device.uid === uid) {
-                device.lastAlive = stamp;
-                consola.debug(`${device.uid} updated their last active time: ${stamp}`);
-            }
-        });
-        senses.eventbus.on("discovery.death", (uid: string) => {
-            if (device.uid === uid && device.lastAlive) {
-                device.lastAlive = null;
-                consola.debug(`${device.uid} is dead now.`);
-                senses.devices
-                    .filter((d) => d.via && d.via === device.uid)
-                    .forEach((d) => senses.eventbus.emit("discovery.death", d.uid, new Date(), "cascade"));
-            }
-        });
-    }
-
-    senses.addDevice(device);
-
-    return device;
-}
-
-function createDevice(shake: Handshake, type: DeviceType): MqttDevice {
-    const stateTopic = shake.comm?.find((c) => c.type === "state")?.topic || `${shake.uid}/state`;
-    const setTopic = shake.comm?.find((c) => c.type === "set")?.topic || `${shake.uid}/set`;
-    const getTopic = shake.comm?.find((c) => c.type === "fetch")?.topic || `${shake.uid}/get`;
-
-    switch (type.type) {
-        case "light":
-            return new Light(stateTopic, setTopic, getTopic);
-        case "sensor":
-            const field = Reflect.get(shake.additional as Record<string, unknown>, "field") || "value";
-
-            return new Sensor(stateTopic, getTopic, field);
-        default:
-            throw new Error(`Unknown device type ${type.type}`);
-    }
-}
-
-function updateDeviceInfo(device: MqttDevice, shake: Handshake) {
-    device.updateFromShake(shake);
 }
 
 export function setupPlatform(platform: string, senses: ISenses, config: YAMLMap): void | Promise<void> {

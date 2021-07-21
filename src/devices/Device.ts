@@ -1,6 +1,7 @@
 import consola, { Consola } from "consola";
 import Entity, { UniqueIdentity } from "../core/Entity";
 import Handshake, { decodeDeviceType } from "../core/Handshake";
+import { ISenses } from "../core/Senses";
 import { asArray, toObject } from "../core/utils";
 
 export default abstract class Device<TState> implements Entity, UniqueIdentity {
@@ -25,6 +26,11 @@ export default abstract class Device<TState> implements Entity, UniqueIdentity {
     tags: string[] = [];
     via?: string;
     attributes: Record<string, unknown> = {};
+    readonly senses: ISenses;
+
+    constructor(senses: ISenses) {
+        this.senses = senses;
+    }
 
     abstract setState(state: Partial<TState>): Promise<boolean> | boolean;
     abstract getState(): Readonly<TState>;

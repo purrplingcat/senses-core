@@ -8,12 +8,15 @@ import Discovery from "./Discovery";
 import Entity from "./Entity";
 import EventBus from "./EventBus";
 import Handshake from "./Handshake";
+import { Component } from "./loader";
 import IService from "./Service";
+import StateMachine, { IStateMachine } from "./StateMachine";
 
 export interface ISenses {
+    components: Component[];
     debug: boolean;
     eventbus: EventBus;
-    mqtt?: MqttClient;
+    mqtt: MqttClient;
     http?: Application;
     devices: Device<unknown>[];
     services: IService[];
@@ -21,7 +24,7 @@ export interface ISenses {
     groups: IGroup[];
     domain: string;
     name: string;
-    states: Record<string, boolean>;
+    states: IStateMachine;
     hasDevice(uidOrEntityId: string): boolean;
     fetchDevice(uidOrEntityId: string): Device<unknown>;
     addDevice<TState>(device: Device<TState>): void;
@@ -35,27 +38,30 @@ export interface ISenses {
 export class Senses implements ISenses {
     debug: boolean;
     eventbus: EventBus;
-    mqtt?: MqttClient;
+    mqtt: MqttClient;
     http?: Application;
-    states: Record<string, boolean>;
+    states: IStateMachine;
     devices: Device<unknown>[];
     services: IService[];
     rooms: IRoom[];
     groups: IGroup[];
+    components: Component[];
     domain: string;
     name: string;
     startAt: number;
     private _uid: string;
     private _discovery?: Discovery;
 
-    constructor(domain: string, name: string, debug = false) {
+    constructor(mqtt: MqttClient, domain: string, name: string, debug = false) {
         this._uid = `AC-${domain}-senses-${process.env.NODE_INSTANCE_ID || 0}-${process.pid}-${Date.now()}`;
         this.eventbus = new EventBus(this);
         this.devices = [];
         this.services = [];
         this.rooms = [];
         this.groups = [];
-        this.states = {};
+        this.components = [];
+        this.mqtt = mqtt;
+        this.states = new StateMachine();
         this.startAt = 0;
         this.domain = domain;
         this.name = name;
@@ -190,7 +196,11 @@ export class Senses implements ISenses {
         });
 
         this.eventbus.on("device.state_update", (device) => {
-            this.states[device.uid] = device.available;
+            this.states.updateState("device", device.uid, {
+                uid: device.uid,
+                available: device.available,
+                ...device.getState(),
+            });
         });
 
         consola.success("Senses assistant ready");

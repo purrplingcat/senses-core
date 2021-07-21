@@ -8,10 +8,9 @@ export type ComponentDict = { [name: string]: string };
 
 export interface Component {
     name: string;
-    domain: string;
     platforms?: string[];
     dependencies?: string[];
-    setup?(senses: ISenses, config: YAMLMap): void | Promise<void>;
+    setup?(senses: ISenses, config: Document): void | Promise<void>;
     setupPlatform?(platform: string, senses: ISenses, config: YAMLMap): void | Promise<void>;
 }
 
@@ -59,36 +58,27 @@ function fetchPlatformConfig(config: Document, platform: string, component: Comp
     return (
         config
             .get(platform)
-            .items?.filter((itm: YAMLMap) => itm instanceof YAMLMap && itm.get("platform") === component.domain) ?? []
+            .items?.filter((itm: YAMLMap) => itm instanceof YAMLMap && itm.get("platform") === component.name) ?? []
     );
 }
 
-export async function loadComponent(path: string, senses: ISenses, config: Document): Promise<Component | null> {
+export async function loadComponent(path: string, senses: ISenses, config: Document): Promise<Component> {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const component = require(path) as Component;
+    const component: Component = await import(path);
 
     if (loadedComponents.includes(component)) {
         return component;
     }
 
     if (!component.name) {
-        throw new Error(`Component on path ${path} has invalid name ${component.name}`);
-    }
-
-    if (component.domain == null) {
-        component.domain = component.name;
-    }
-
-    if (!config.has(component.domain)) {
-        consola.debug(`Skip load component ${component.name}: Config for domain ${component.domain} is not declared`);
-        return null;
+        throw new Error(`Component on path ${path} has invalid name.`);
     }
 
     await resolveDependencies(component.name, component.dependencies || [], senses.eventbus);
 
     if (component.setup) {
         // Setup component
-        await component.setup(senses, config.get(component.domain) as YAMLMap);
+        await component.setup(senses, config);
     }
 
     if (component.platforms?.length && component.setupPlatform) {
@@ -100,6 +90,7 @@ export async function loadComponent(path: string, senses: ISenses, config: Docum
         });
     }
 
+    senses.components.push(component);
     senses.eventbus.emit("loaded", component);
     loadedComponents.push(component);
     consola.debug("Loaded component " + component.name);
@@ -108,7 +99,7 @@ export async function loadComponent(path: string, senses: ISenses, config: Docum
 }
 
 export async function loadComponents(components: string[], senses: ISenses, config: Document): Promise<void> {
-    const promises: Promise<Component | null>[] = [];
+    const promises: Promise<Component>[] = [];
 
     consola.info("Loading components ...");
 
@@ -117,5 +108,6 @@ export async function loadComponents(components: string[], senses: ISenses, conf
     }
 
     const loaded = (await Promise.all(promises)).filter((c) => c != null);
+
     consola.info(`Loaded ${loaded.length} components`);
 }

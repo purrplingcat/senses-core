@@ -36,6 +36,7 @@
     "graphql": "^15.5.1",
     "graphql-mqtt-subscriptions": "^1.2.0",
     "graphql-type-json": "^0.3.2",
+    "immer": "^9.0.5",
     "mqtt": "^4.2.6",
     "mqtt-pattern": "^1.2.0",
     "query": "protobi/query",

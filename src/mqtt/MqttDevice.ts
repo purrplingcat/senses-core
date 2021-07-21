@@ -1,24 +1,31 @@
 import consola from "consola";
-import { differenceInMilliseconds, parse, parseISO } from "date-fns";
+import { differenceInMilliseconds, parseISO } from "date-fns";
 import { ISubscriptionGrant, MqttClient } from "mqtt";
 import EventBus from "../core/EventBus";
 import Handshake from "../core/Handshake";
+import { ISenses } from "../core/Senses";
 import Device from "../devices/Device";
 
 export default abstract class MqttDevice extends Device<unknown> {
-    mqtt?: MqttClient;
-    eventbus?: EventBus;
     stateTopic: string;
     commandTopic: string;
     fetchStateTopic: string;
     payloadFormat: "json" | "string" | "number" | "boolean";
 
-    constructor(stateTopic: string, commandTopic: string, fetchStateTopic: string) {
-        super();
+    constructor(senses: ISenses, stateTopic: string, commandTopic: string, fetchStateTopic: string) {
+        super(senses);
         this.stateTopic = stateTopic;
         this.commandTopic = commandTopic;
         this.fetchStateTopic = fetchStateTopic;
         this.payloadFormat = "json";
+    }
+
+    get mqtt(): MqttClient {
+        return this.senses.mqtt;
+    }
+
+    get eventbus(): EventBus {
+        return this.senses.eventbus;
     }
 
     protected _publish<TPayload>(topic: string, payload: TPayload): Promise<void> {
