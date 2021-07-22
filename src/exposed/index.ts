@@ -19,7 +19,7 @@ export function setup(senses: ISenses): void {
         if (topic.startsWith("service/")) handleService(topic, message);
     });
 
-    senses.eventbus.on("device.state_update", (device: Device<unknown>) => {
+    senses.eventbus.on("device.state_update", (device: Device) => {
         if (senses.mqtt?.connected) {
             const room = device.room || "none";
 

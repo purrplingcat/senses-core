@@ -3,7 +3,7 @@ import UIDGenerator from "uid-generator";
 import { ISenses } from "../core/Senses";
 import { YAMLMap } from "yaml/types";
 import Handshake, { decodeDeviceType } from "../core/Handshake";
-import MqttDevice from "./MqttDevice";
+import BaseDevice from "../devices/BaseDevice";
 import { asArray } from "../core/utils";
 import { registerNewDevice, updateDeviceInfo } from "../devices/utils";
 
@@ -26,7 +26,7 @@ export function setup(senses: ISenses): void {
         if (senses.hasDevice(shake.uid)) {
             const device = senses.fetchDevice(shake.uid);
 
-            if (device instanceof MqttDevice) {
+            if (device instanceof BaseDevice) {
                 updateDeviceInfo(device, shake);
 
                 if (!device.tags.includes("discovered")) {

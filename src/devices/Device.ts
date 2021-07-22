@@ -4,7 +4,7 @@ import Handshake, { decodeDeviceType } from "../core/Handshake";
 import { ISenses } from "../core/Senses";
 import { asArray, toObject } from "../core/utils";
 
-export default abstract class Device<TState> implements Entity, UniqueIdentity {
+export default abstract class Device<TState extends {} = {}> implements Entity, UniqueIdentity {
     title?: string;
     uid = "";
     name = "";
@@ -34,6 +34,7 @@ export default abstract class Device<TState> implements Entity, UniqueIdentity {
 
     abstract setState(state: Partial<TState>): Promise<boolean> | boolean;
     abstract getState(): Readonly<TState>;
+    abstract update(patch?: Partial<TState>): void;
     abstract get available(): boolean;
 
     public get entityId(): string {

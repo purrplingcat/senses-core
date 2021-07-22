@@ -10,7 +10,8 @@ export interface Component {
     name: string;
     platforms?: string[];
     dependencies?: string[];
-    setup?(senses: ISenses, config: Document): void | Promise<void>;
+    preload?(senses: ISenses): void;
+    setup?(senses: ISenses, config: YAMLMap, fullConfig: Document): void | Promise<void>;
     setupPlatform?(platform: string, senses: ISenses, config: YAMLMap): void | Promise<void>;
 }
 
@@ -76,9 +77,9 @@ export async function loadComponent(path: string, senses: ISenses, config: Docum
 
     await resolveDependencies(component.name, component.dependencies || [], senses.eventbus);
 
-    if (component.setup) {
+    if (config.has(component.name) && component.setup) {
         // Setup component
-        await component.setup(senses, config);
+        await component.setup(senses, config.get(component.name), config);
     }
 
     if (component.platforms?.length && component.setupPlatform) {

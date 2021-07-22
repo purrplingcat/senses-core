@@ -5,7 +5,7 @@ import Device from "../devices/Device";
 import { ISenses } from "./Senses";
 import IService from "./Service";
 
-export type DeviceListener = (device: Device<unknown>, senses: ISenses) => void;
+export type DeviceListener = (device: Device, senses: ISenses) => void;
 export type SensesListener = (senses: ISenses) => void;
 export type MqttConnectListener = (mqtt: MqttClient) => void;
 export type ServiceCallListener = (service: IService, params: unknown, result: boolean) => void;

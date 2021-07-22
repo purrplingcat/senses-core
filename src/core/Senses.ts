@@ -17,8 +17,8 @@ export interface ISenses {
     debug: boolean;
     eventbus: EventBus;
     mqtt: MqttClient;
-    http?: Application;
-    devices: Device<unknown>[];
+    //http?: Application;
+    devices: Device[];
     services: IService[];
     rooms: IRoom[];
     groups: IGroup[];
@@ -26,8 +26,8 @@ export interface ISenses {
     name: string;
     states: IStateMachine;
     hasDevice(uidOrEntityId: string): boolean;
-    fetchDevice(uidOrEntityId: string): Device<unknown>;
-    addDevice<TState>(device: Device<TState>): void;
+    fetchDevice(uidOrEntityId: string): Device;
+    addDevice(device: Device): void;
     addService(service: IService): void;
     addRoom(room: IRoom): void;
     callService<TParams>(name: string, params: TParams): Promise<boolean>;
@@ -41,7 +41,7 @@ export class Senses implements ISenses {
     mqtt: MqttClient;
     http?: Application;
     states: IStateMachine;
-    devices: Device<unknown>[];
+    devices: Device[];
     services: IService[];
     rooms: IRoom[];
     groups: IGroup[];
@@ -93,7 +93,7 @@ export class Senses implements ISenses {
         return this.devices.find((d) => d.uid === uidOrEntityId || d.entityId === uidOrEntityId) != null;
     }
 
-    fetchDevice(uidOrEntityId: string): Device<unknown> {
+    fetchDevice(uidOrEntityId: string): Device {
         const device = this.devices.find((d) => d.uid === uidOrEntityId || d.entityId === uidOrEntityId);
 
         if (!device) {
@@ -103,7 +103,7 @@ export class Senses implements ISenses {
         return device;
     }
 
-    addDevice<TState>(device: Device<TState>): void {
+    addDevice(device: Device): void {
         if (device.uid && this.devices.find((d) => d.uid === device.uid)) {
             throw new Error(`Device with uid ${device.uid} already exists`);
         }
@@ -196,11 +196,11 @@ export class Senses implements ISenses {
         });
 
         this.eventbus.on("device.state_update", (device) => {
-            this.states.updateState("device", device.uid, {
+            this.states.updateState("device", device.uid, () => ({
                 uid: device.uid,
                 available: device.available,
-                ...device.getState(),
-            });
+                props: device.getState(),
+            }));
         });
 
         consola.success("Senses assistant ready");

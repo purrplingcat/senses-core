@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import ITurnableDevice from "../devices/TurnableDevice";
-import MqttDevice from "./MqttDevice";
+import BaseDevice, { DeviceState } from "../devices/BaseDevice";
+import { hexToRgb, rgbToHex } from "../core/utils";
+import { ISenses } from "../core/Senses";
 
-const positive = (num: number) => (num >= 0 ? Number(num) : 0);
-const int = (num: number) => parseInt(Number(num).toString());
+const int = (num: number) => Math.trunc(num);
 
-export interface LigthState {
+export interface LigthState extends DeviceState {
     state: "on" | "off" | "unknown";
     brightness: number;
-    rgbColor: [number, number, number]; // rgb
+    rgbColor: string; // hex encoded rgb color like #ca3207
     colorTemp: number;
     effect: number;
 }
@@ -20,14 +21,24 @@ export enum LightFeatures {
     SUPPORT_EFFECTS = "effects",
 }
 
-export default class Light extends MqttDevice implements LigthState, ITurnableDevice {
+export default class Light extends BaseDevice<LigthState> implements ITurnableDevice {
     type = "light";
-    state: "on" | "off" | "unknown" = "unknown";
-    brightness = 0;
-    colorTemp = 0;
-    effect = 0;
-    rgbColor: [number, number, number] = [0, 0, 0];
     features: LightFeatures[] = [];
+
+    constructor(senses: ISenses, stateTopic: string, commandTopic: string, fetchTopic: string) {
+        super(senses, stateTopic, commandTopic, fetchTopic, {
+            _available: false,
+            brightness: 0,
+            colorTemp: 0,
+            rgbColor: "",
+            effect: 0,
+            state: "unknown",
+        });
+    }
+
+    get state() {
+        return this.getState().state ?? "unknown";
+    }
 
     async setState(state: Partial<LigthState>): Promise<boolean> {
         const message: Record<string, number | string | boolean> = {};
@@ -45,24 +56,15 @@ export default class Light extends MqttDevice implements LigthState, ITurnableDe
         }
 
         if (state.rgbColor) {
-            message.r = positive(state.rgbColor[0] || 0);
-            message.g = positive(state.rgbColor[1] || 0);
-            message.b = positive(state.rgbColor[2] || 0);
+            const rgb = hexToRgb(state.rgbColor);
+            message.r = rgb?.r ?? 0;
+            message.g = rgb?.g ?? 0;
+            message.b = rgb?.b ?? 0;
         }
 
         this._publish(this.commandTopic, message);
 
         return true;
-    }
-
-    public getState(): Readonly<LigthState> {
-        return Object.freeze<LigthState>({
-            state: this.state,
-            brightness: this.brightness,
-            colorTemp: this.colorTemp,
-            rgbColor: this.rgbColor,
-            effect: this.effect,
-        });
     }
 
     turnOn(): boolean | Promise<boolean> {
@@ -73,14 +75,17 @@ export default class Light extends MqttDevice implements LigthState, ITurnableDe
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected _retrieveState(payload: any): void {
-        this.state = payload.state ?? MqttDevice.stateNumberToStr(payload.switch);
-        this.brightness = payload.brightness;
-        this.effect = int(payload.effect);
-        this.colorTemp = payload.colorTemp;
+    protected _mapState(payload: any): Partial<LigthState> {
+        const toUpdate: Partial<LigthState> = {
+            state: payload.state ?? BaseDevice.stateNumberToStr(payload.switch),
+            brightness: payload.brightness,
+            effect: int(payload.effect),
+        };
 
         if (payload.r && payload.g && payload.b) {
-            this.rgbColor = [int(payload.r), int(payload.g), int(payload.b)];
+            toUpdate.rgbColor = rgbToHex(int(payload.r), int(payload.g), int(payload.b));
         }
+
+        return toUpdate;
     }
 }

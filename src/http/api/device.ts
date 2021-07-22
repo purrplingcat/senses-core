@@ -4,7 +4,7 @@ import { isTurnableDevice } from "../../devices/TurnableDevice";
 
 const routes: Router = Router();
 
-function deviceMapper(device: Device<unknown>) {
+function deviceMapper(device: Device) {
     return {
         uid: device.uid || null,
         entityId: device.entityId,

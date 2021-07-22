@@ -14,31 +14,31 @@ watcher:
 
 test: !include lol
 
-light:
-  # Světlo v kuchyni
-  - name: kitchen_light
-    title: Kuchyně - světlo
-    platform: mqtt
-    class: light
-    commandTopic: modbus/gw0/kitchenlight0/set
-    stateTopic: modbus/gw0/kitchenlight0/state
-    features: [colorTemp, brightness]
-    availability:
-      - topic: modbus/gw0/kitchenlight0/presence
-        payload_available: online
-        payload_unavailable: offline
-
-sensor:
-  - name: temperature
-    title: Teplota
-    class: temperature
-    room: kitchen
-    platform: mqtt
-    groups: [room.kitchen]
-    stateTopic: device/roztoky/kitchen/heater
-    field: temperature
-    tags:
-      - main
+device:
+  discovery: true
+  devices:
+    # Světlo v kuchyni
+    - name: kitchen_light
+      title: Kuchyně - světlo
+      type: light
+      class: light
+      commandTopic: modbus/gw0/kitchenlight0/set
+      stateTopic: modbus/gw0/kitchenlight0/state
+      features: [colorTemp, brightness]
+      availability:
+        - topic: modbus/gw0/kitchenlight0/presence
+          payload_available: online
+          payload_unavailable: offline
+    - name: temperature
+      title: Teplota
+      class: temperature
+      room: kitchen
+      type: sensor
+      groups: [room.kitchen]
+      stateTopic: device/roztoky/kitchen/heater
+      field: temperature
+      tags:
+        - main
 
 room:
   - name: kitchen

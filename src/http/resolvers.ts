@@ -1,11 +1,11 @@
 import { UserInputError } from "apollo-server-express";
-import { ISenses, Senses } from "../core/Senses";
+import { ISenses } from "../core/Senses";
 import Device from "../devices/Device";
 import { IRoom } from "../devices/Room";
 import { isTurnableDevice } from "../devices/TurnableDevice";
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function deviceMapper(this: ISenses, device: Device<unknown>) {
+export function deviceMapper(this: ISenses, device: Device) {
     return {
         uid: device.uid,
         entityId: device.entityId,

@@ -2,20 +2,15 @@ import consola from "consola";
 import Handshake, { DeviceType } from "../core/Handshake";
 import { ISenses } from "../core/Senses";
 import Light from "../mqtt/Light";
-import MqttDevice from "../mqtt/MqttDevice";
+import BaseDevice from "./BaseDevice";
 import Sensor from "../mqtt/Sensor";
 import Device from "./Device";
 
-export function registerNewDevice(senses: ISenses, shake: Handshake, type: DeviceType): MqttDevice {
+export function registerNewDevice(senses: ISenses, shake: Handshake, type: DeviceType): BaseDevice {
     const device = createDevice(senses, shake, type);
     updateDeviceInfo(device, shake);
 
-    senses.eventbus.on("mqtt.message", (topic: string, message: string) => {
-        if (topic === device.stateTopic) {
-            device.onMqttMessage(message);
-        }
-    });
-
+    senses.eventbus.on("mqtt.message", device.onMqttMessage.bind(device));
     senses.eventbus.on("mqtt.connect", (mqtt) => {
         if (mqtt.connected && !mqtt.disconnecting) {
             device.subscribeTopics();
@@ -46,7 +41,7 @@ export function registerNewDevice(senses: ISenses, shake: Handshake, type: Devic
     return device;
 }
 
-function createDevice(senses: ISenses, shake: Handshake, type: DeviceType): MqttDevice {
+function createDevice(senses: ISenses, shake: Handshake, type: DeviceType): BaseDevice {
     const stateTopic = shake.comm?.find((c) => c.type === "state")?.topic || `${shake.uid}/state`;
     const setTopic = shake.comm?.find((c) => c.type === "set")?.topic || `${shake.uid}/set`;
     const getTopic = shake.comm?.find((c) => c.type === "fetch")?.topic || `${shake.uid}/get`;
@@ -63,6 +58,6 @@ function createDevice(senses: ISenses, shake: Handshake, type: DeviceType): Mqtt
     }
 }
 
-export function updateDeviceInfo(device: Device<unknown>, shake: Handshake): void {
+export function updateDeviceInfo(device: Device, shake: Handshake): void {
     device.updateFromShake(shake);
 }

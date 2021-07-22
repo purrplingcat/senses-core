@@ -5,7 +5,7 @@ import yaml from "yaml";
 import { Senses } from "./core/Senses";
 import { loadComponents } from "./core/loader";
 
-const components = ["http", "mqtt", "room", "exposed", "watcher"].map((c) => __dirname + "/" + c);
+const components = ["http", "devices", "room", "exposed", "watcher"].map((c) => __dirname + "/" + c);
 
 function createMqttClient(brokerUrl: string) {
     consola.info("Connecting to mqtt broker ...");

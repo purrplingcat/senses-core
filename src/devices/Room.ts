@@ -5,7 +5,7 @@ import Device from "./Device";
 export interface IRoom extends Entity {
     description?: string;
     icon?: string;
-    devices: Device<unknown>[];
+    devices: Device[];
 }
 
 export default class Room implements IRoom {
@@ -24,7 +24,7 @@ export default class Room implements IRoom {
         this.available = true;
     }
 
-    get devices(): Device<unknown>[] {
+    get devices(): Device[] {
         return this.senses.devices.filter((d) => d.room === this.name);
     }
 }

@@ -1,23 +1,38 @@
 import consola from "consola";
 import { differenceInMilliseconds, parseISO } from "date-fns";
+import { equal } from "fast-shallow-equal";
 import { ISubscriptionGrant, MqttClient } from "mqtt";
+import { exec, matches } from "mqtt-pattern";
 import EventBus from "../core/EventBus";
 import Handshake from "../core/Handshake";
 import { ISenses } from "../core/Senses";
-import Device from "../devices/Device";
+import Device from "./Device";
 
-export default abstract class MqttDevice extends Device<unknown> {
+export interface DeviceState {
+    _available: boolean;
+}
+
+export default abstract class BaseDevice<TState extends DeviceState = DeviceState> extends Device<TState> {
     stateTopic: string;
     commandTopic: string;
     fetchStateTopic: string;
     payloadFormat: "json" | "string" | "number" | "boolean";
+    update = (): void => this._update({});
+    private _state: Readonly<TState>;
 
-    constructor(senses: ISenses, stateTopic: string, commandTopic: string, fetchStateTopic: string) {
+    constructor(
+        senses: ISenses,
+        stateTopic: string,
+        commandTopic: string,
+        fetchStateTopic: string,
+        initialState: TState,
+    ) {
         super(senses);
         this.stateTopic = stateTopic;
         this.commandTopic = commandTopic;
         this.fetchStateTopic = fetchStateTopic;
         this.payloadFormat = "json";
+        this._state = initialState;
     }
 
     get mqtt(): MqttClient {
@@ -26,6 +41,10 @@ export default abstract class MqttDevice extends Device<unknown> {
 
     get eventbus(): EventBus {
         return this.senses.eventbus;
+    }
+
+    getState(): Readonly<TState> {
+        return this._state;
     }
 
     protected _publish<TPayload>(topic: string, payload: TPayload): Promise<void> {
@@ -72,10 +91,12 @@ export default abstract class MqttDevice extends Device<unknown> {
         }
     }
 
-    public onMqttMessage(message: string): void {
-        const payload = this._parseMessage(message);
+    public onMqttMessage(topic: string, message: string): void {
+        if (!matches(this.stateTopic, topic)) return;
 
-        this._retrieveState(payload);
+        const payload = this._parseMessage(message);
+        const topicParams = exec(this.stateTopic, topic) ?? {};
+        const newState = this._mapState({ ...payload, ...topicParams });
 
         try {
             this.lastUpdate = payload._updatedAt ? parseISO(payload._updatedAt) : new Date();
@@ -85,10 +106,21 @@ export default abstract class MqttDevice extends Device<unknown> {
         }
 
         this._logger.trace("Received new state payload", payload);
-        this.eventbus?.emit("device.state_update", this, this.eventbus.senses);
+        this._update(newState);
     }
 
-    protected abstract _retrieveState(payload: unknown): void;
+    private _setInternalState(newState: Partial<TState>) {
+        if (newState == null || newState === {}) return;
+
+        const nextState = Object.assign({}, this._state, newState);
+
+        if (!equal(this._state, nextState)) {
+            this._state = Object.freeze(nextState);
+            this.eventbus?.emit("device.state_update", this, this.senses);
+        }
+    }
+
+    protected abstract _mapState(payload: unknown): Partial<TState>;
 
     public get available(): boolean {
         if (this.keepalive) {
@@ -96,6 +128,16 @@ export default abstract class MqttDevice extends Device<unknown> {
         }
 
         return true;
+    }
+
+    private _update(patch: Partial<TState>): void {
+        const snapshot = this.getState();
+
+        if (snapshot && snapshot._available !== this.available) {
+            patch._available = this.available;
+        }
+
+        this._setInternalState(patch);
     }
 
     subscribeTopics(): Promise<ISubscriptionGrant[]> {

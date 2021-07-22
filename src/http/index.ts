@@ -55,7 +55,7 @@ export function setup(senses: ISenses, config: YAMLMap): void {
 
     graphQl.applyMiddleware({ app });
     graphQl.installSubscriptionHandlers(server);
-    senses.http = app;
+
     senses.eventbus.on("start", () => {
         server.listen(config.get("port") ?? 8080, () =>
             consola.success("Http server listening on port http://localhost:8080"),

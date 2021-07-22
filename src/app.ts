@@ -19,9 +19,9 @@ export default async function run(argv: string[], env: NodeJS.ProcessEnv): Promi
     const configFile = argv[1] || env.CONFIG_FILE || process.cwd() + "/config/config.yaml";
     const senses = await setupSenses(configFile, debug);
 
-    if (senses.http == null) {
+    /*if (senses.http == null) {
         throw new Error("Http server is not configured.");
-    }
+    }*/
 
     if (senses.mqtt == null) {
         throw new Error("MQTT broker is not configured.");
