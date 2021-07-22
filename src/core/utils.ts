@@ -1,5 +1,15 @@
 import { YAMLSeq, YAMLMap } from "yaml/types";
 
+export function pure<T extends Record<string | number | symbol, unknown>>(obj: T): T {
+    Object.keys(obj).forEach((key) => (obj[key] === undefined ? delete obj[key] : {}));
+
+    return obj;
+}
+
+export function isEmptyObject(obj: object): boolean {
+    return obj && obj.constructor === Object && Object.keys(obj).length === 0;
+}
+
 export function asArray<T>(val: unknown): T[] {
     if (!val) {
         return [];

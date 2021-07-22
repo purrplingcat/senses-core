@@ -76,10 +76,11 @@ export default class Light extends BaseDevice<LigthState> implements ITurnableDe
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected _mapState(payload: any): Partial<LigthState> {
+        const snapshot = this.getState();
         const toUpdate: Partial<LigthState> = {
             state: payload.state ?? BaseDevice.stateNumberToStr(payload.switch),
             brightness: payload.brightness,
-            effect: int(payload.effect),
+            effect: int(payload.effect ?? snapshot.effect),
         };
 
         if (payload.r && payload.g && payload.b) {

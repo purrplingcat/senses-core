@@ -4,32 +4,38 @@ import Handshake, { decodeDeviceType } from "../core/Handshake";
 import { ISenses } from "../core/Senses";
 import { asArray, toObject } from "../core/utils";
 
-export default abstract class Device<TState extends {} = {}> implements Entity, UniqueIdentity {
-    title?: string;
-    uid = "";
-    name = "";
-    type = "generic";
-    lastAlive: Date | null = null;
-    lastUpdate: Date | null = null;
-    keepalive = false;
-    timeout = 10000;
-    class: string | null = null;
-    room: string | null = null;
-    groups: string[] = [];
-    features: string[] = [];
+export interface DeviceInfo {
     product?: string;
     vendor?: string;
     model?: string;
     serialNumber?: string;
     revision?: string;
-    description?: string;
+}
+
+export default abstract class Device<TState extends {} = {}> implements Entity, UniqueIdentity {
+    title?: string;
+    name = "";
+    uid = "";
+    type = "generic";
+    class: string | null = null;
+    info: DeviceInfo;
+    lastAlive: Date | null = null;
+    lastUpdate: Date | null = null;
+    keepalive = false;
+    timeout = 10000;
+    room: string | null = null;
+    groups: string[] = [];
+    features: string[] = [];
     tags: string[] = [];
     via?: string;
-    attributes: Record<string, unknown> = {};
+    description?: string;
+    attributes: Record<string, unknown>;
     readonly senses: ISenses;
 
     constructor(senses: ISenses) {
         this.senses = senses;
+        this.attributes = {};
+        this.info = {};
     }
 
     abstract setState(state: Partial<TState>): Promise<boolean> | boolean;
@@ -46,14 +52,7 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
     }
 
     public getExtraAttrs(): Record<string, unknown> {
-        return {
-            features: this.features,
-            product: this.product,
-            vendor: this.vendor,
-            serialNumber: this.serialNumber,
-            model: this.model,
-            revision: this.revision,
-        };
+        return { ...this.info, ...this.attributes };
     }
 
     public updateFromShake(shake: Handshake): void {
@@ -68,10 +67,10 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
         this.groups = asArray(shake.groups);
         this.keepalive = shake.keepalive;
         this.timeout = shake.keepaliveTimeout;
-        this.product = shake.product;
-        this.vendor = shake.vendor;
-        this.serialNumber = shake.serialNo;
-        this.model = shake.model;
+        this.info.product = shake.product;
+        this.info.vendor = shake.vendor;
+        this.info.serialNumber = shake.serialNo;
+        this.info.model = shake.model;
         this.description = shake.description;
         this.tags = shake.tags || [];
         this.via = shake.via;

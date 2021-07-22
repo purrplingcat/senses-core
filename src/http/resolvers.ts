@@ -14,6 +14,7 @@ export function deviceMapper(this: ISenses, device: Device) {
         class: device.class,
         title: device.title,
         description: device.description,
+        info: device.info,
         room: device.room,
         groups: this.groups.filter((g) => device.groups.includes(g.name)),
         available: device.available,
@@ -42,7 +43,20 @@ export function roomMapper(room: IRoom) {
     };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createMutationResolvers(senses: ISenses): Record<string, (parent: any, args: any) => unknown> {
+    return {
+        setState: (_, { deviceUid, newState }) => {
+            const device = senses.devices.find((d) => d.uid === deviceUid);
+
+            if (!device) {
+                throw new UserInputError("Device not found", { code: 404 });
+            }
+
+            return device.setState(newState);
+        },
+    };
+}
+
 export default function createQueryResolvers(senses: ISenses): Record<string, (parent: any, args: any) => unknown> {
     return {
         device: (_, args) => senses.devices.find((d) => d.uid === args.uid),

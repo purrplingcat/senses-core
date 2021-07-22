@@ -6,6 +6,7 @@ import { exec, matches } from "mqtt-pattern";
 import EventBus from "../core/EventBus";
 import Handshake from "../core/Handshake";
 import { ISenses } from "../core/Senses";
+import { isEmptyObject, pure } from "../core/utils";
 import Device from "./Device";
 
 export interface DeviceState {
@@ -96,7 +97,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
 
         const payload = this._parseMessage(message);
         const topicParams = exec(this.stateTopic, topic) ?? {};
-        const newState = this._mapState({ ...payload, ...topicParams });
+        const newState = pure(this._mapState({ ...payload, ...topicParams }));
 
         try {
             this.lastUpdate = payload._updatedAt ? parseISO(payload._updatedAt) : new Date();
@@ -110,7 +111,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     }
 
     private _setInternalState(newState: Partial<TState>) {
-        if (newState == null || newState === {}) return;
+        if (newState == null || isEmptyObject(newState)) return;
 
         const nextState = Object.assign({}, this._state, newState);
 

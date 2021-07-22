@@ -10,6 +10,14 @@ export default gql`
         unknown
     }
 
+    type DeviceInfo {
+        product: String
+        vendor: String
+        model: String
+        serialNumber: String
+        revision: String
+    }
+
     type Device {
         uid: ID!
         name: String
@@ -19,6 +27,7 @@ export default gql`
         description: String
         room: String
         groups: [Group]
+        info: DeviceInfo
         available: Boolean
         lastAlive: Date
         keepalive: Boolean
@@ -53,6 +62,10 @@ export default gql`
         device(uid: ID!): Device!
         rooms(filter: JSON): [Room]
         room(name: String!): Room!
+    }
+
+    type Mutation {
+        setState(deviceUid: String!, newState: JSON): Boolean
     }
 
     type Subscription {
