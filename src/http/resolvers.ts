@@ -45,14 +45,14 @@ export function roomMapper(room: IRoom) {
 
 export function createMutationResolvers(senses: ISenses): Record<string, (parent: any, args: any) => unknown> {
     return {
-        setState: (_, { deviceUid, newState }) => {
+        setState: async (_, { deviceUid, newState }) => {
             const device = senses.devices.find((d) => d.uid === deviceUid);
 
             if (!device) {
                 throw new UserInputError("Device not found", { code: 404 });
             }
 
-            return device.setState(newState);
+            return await device.setState(newState);
         },
     };
 }

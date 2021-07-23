@@ -18,7 +18,8 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     commandTopic: string;
     fetchStateTopic: string;
     payloadFormat: "json" | "string" | "number" | "boolean";
-    update = (): void => this._update({});
+    optimistic: boolean;
+    update = (): boolean => this._update({});
     private _state: Readonly<TState>;
 
     constructor(
@@ -33,6 +34,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         this.commandTopic = commandTopic;
         this.fetchStateTopic = fetchStateTopic;
         this.payloadFormat = "json";
+        this.optimistic = false;
         this._state = initialState;
     }
 
@@ -55,12 +57,13 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
                 return;
             }
 
+            this._logger.debug(`Device ${this.uid} are publishing mqtt message on topic:`, topic);
             this.mqtt.publish(topic, JSON.stringify(payload), (err) => {
                 if (err) {
                     reject(err);
                 }
 
-                this._logger.trace("Published mqtt message", topic, payload);
+                this._logger.trace("Published mqtt message", this.uid, topic, payload);
                 resolve();
             });
         });
@@ -92,6 +95,14 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         }
     }
 
+    private _parseDate(encoded: number | string) {
+        if (typeof encoded === "number") {
+            return new Date(encoded);
+        }
+
+        return parseISO(encoded);
+    }
+
     public onMqttMessage(topic: string, message: string): void {
         if (!matches(this.stateTopic, topic)) return;
 
@@ -99,26 +110,31 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         const topicParams = exec(this.stateTopic, topic) ?? {};
         const newState = pure(this._mapState({ ...payload, ...topicParams }));
 
+        this._logger.trace("Incoming device state payload via MQTT", payload);
+
         try {
-            this.lastUpdate = payload._updatedAt ? parseISO(payload._updatedAt) : new Date();
+            this.lastUpdate = payload._updatedAt ? this._parseDate(payload._updatedAt) : new Date();
         } catch (err) {
             this.lastUpdate = new Date();
             this._logger.warn("Can't parse update date in state payload", err);
         }
 
-        this._logger.trace("Received new state payload", payload);
         this._update(newState);
     }
 
-    private _setInternalState(newState: Partial<TState>) {
-        if (newState == null || isEmptyObject(newState)) return;
+    private _setInternalState(newState: Partial<TState>, force = false): boolean {
+        if (!force && isEmptyObject(newState)) return false;
 
-        const nextState = Object.assign({}, this._state, newState);
+        const nextState = Object.assign({}, this._state, newState ?? {});
 
-        if (!equal(this._state, nextState)) {
+        if (force || !equal(this._state, nextState)) {
             this._state = Object.freeze(nextState);
             this.eventbus?.emit("device.state_update", this, this.senses);
+
+            return true;
         }
+
+        return false;
     }
 
     protected abstract _mapState(payload: unknown): Partial<TState>;
@@ -131,14 +147,14 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         return true;
     }
 
-    private _update(patch: Partial<TState>): void {
+    protected _update(patch: Partial<TState>): boolean {
         const snapshot = this.getState();
 
         if (snapshot && snapshot._available !== this.available) {
             patch._available = this.available;
         }
 
-        this._setInternalState(patch);
+        return this._setInternalState(patch);
     }
 
     subscribeTopics(): Promise<ISubscriptionGrant[]> {

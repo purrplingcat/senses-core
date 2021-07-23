@@ -15,6 +15,7 @@ class Discovery extends EventEmitter {
     private _mqtt: MqttClient;
     private _handshakeFactory: () => Handshake;
     private _logger: Consola;
+    logPinging = false;
 
     constructor(mqtt: MqttClient, handshakeFactory: () => Handshake) {
         super();
@@ -48,11 +49,11 @@ class Discovery extends EventEmitter {
 
         switch (discoveryType) {
             case "alive":
-                this._logger.debug(`Got keep-alive packet from '${message}'`);
+                if (this.logPinging) this._logger.trace(`Got keep-alive packet from '${message}'`);
                 this.emit("alive", message.toString(), timestamp);
                 break;
             case "death":
-                this._logger.debug(`Got death packet from '${message}'`);
+                if (this.logPinging) this._logger.trace(`Got death packet from '${message}'`);
                 this.emit("death", message.toString(), timestamp);
                 break;
             case "handshake":
@@ -62,7 +63,7 @@ class Discovery extends EventEmitter {
                     return;
                 }
 
-                this._logger.debug(`Got handshake from '${shake.uid}' (expects reply: ${!!shake._thread})`);
+                this._logger.debug(`Got handshake from '${shake.uid}' (expects reply: ${Boolean(shake._thread)})`);
                 this.emit("handshake", shake, timestamp);
 
                 if (shake.available) {

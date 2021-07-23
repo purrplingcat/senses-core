@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import ITurnableDevice from "../devices/TurnableDevice";
 import BaseDevice, { DeviceState } from "../devices/BaseDevice";
-import { hexToRgb, rgbToHex } from "../core/utils";
+import { hexToRgb, pure, rgbToHex } from "../core/utils";
 import { ISenses } from "../core/Senses";
 
 const int = (num: number) => Math.trunc(num);
@@ -41,19 +41,14 @@ export default class Light extends BaseDevice<LigthState> implements ITurnableDe
     }
 
     async setState(state: Partial<LigthState>): Promise<boolean> {
-        const message: Record<string, number | string | boolean> = {};
+        const message: Record<string, number | string | boolean | undefined> = {};
 
         if (state.state) {
             message.switch = state.state === "on" ? 1 : 0;
         }
 
-        if (state.brightness) {
-            message.brightness = state.brightness;
-        }
-
-        if (state.colorTemp) {
-            message.colorTemp = state.colorTemp;
-        }
+        message.brightness = state.brightness;
+        message.colorTemp = state.colorTemp;
 
         if (state.rgbColor) {
             const rgb = hexToRgb(state.rgbColor);
@@ -62,7 +57,12 @@ export default class Light extends BaseDevice<LigthState> implements ITurnableDe
             message.b = rgb?.b ?? 0;
         }
 
-        this._publish(this.commandTopic, message);
+        this._publish(this.commandTopic, pure(message));
+
+        if (this.optimistic) {
+            this.lastUpdate = new Date();
+            this._update(state);
+        }
 
         return true;
     }

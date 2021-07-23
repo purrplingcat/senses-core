@@ -65,7 +65,7 @@ export default gql`
     }
 
     type Mutation {
-        setState(deviceUid: String!, newState: JSON): Boolean
+        setState(deviceUid: String!, newState: JSON!): Boolean
     }
 
     type Subscription {

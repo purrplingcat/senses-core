@@ -9,7 +9,7 @@ import { ISenses } from "../core/Senses";
 import GraphQLDate from "./scalars/date";
 import routes from "./routes";
 import typeDefs from "./schema";
-import createQueryResolvers, { deviceMapper } from "./resolvers";
+import createQueryResolvers, { createMutationResolvers, deviceMapper } from "./resolvers";
 
 export const name = "http";
 
@@ -38,6 +38,7 @@ function setupGraphQl(senses: ISenses): ApolloServer {
         Date: GraphQLDate,
         JSON: GraphQLJSONObject,
         Query: createQueryResolvers(senses),
+        Mutation: createMutationResolvers(senses),
         Subscription: {
             deviceUpdated: {
                 subscribe: () => pubsub.asyncIterator(["device.update"]),
