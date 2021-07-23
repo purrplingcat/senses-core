@@ -61,7 +61,7 @@ export default class Light extends BaseDevice<LigthState> implements ITurnableDe
 
         if (this.optimistic) {
             this.lastUpdate = new Date();
-            this._update(state);
+            this._update(state, false);
         }
 
         return true;

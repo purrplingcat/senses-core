@@ -1,5 +1,5 @@
 import consola from "consola";
-import { differenceInMilliseconds, parseISO } from "date-fns";
+import { differenceInMilliseconds, isAfter, parseISO } from "date-fns";
 import { equal } from "fast-shallow-equal";
 import { ISubscriptionGrant, MqttClient } from "mqtt";
 import { exec, matches } from "mqtt-pattern";
@@ -19,7 +19,8 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     fetchStateTopic: string;
     payloadFormat: "json" | "string" | "number" | "boolean";
     optimistic: boolean;
-    update = (): boolean => this._update({});
+    allowOutdated: boolean;
+    update = (): boolean => this._update({}, false);
     private _state: Readonly<TState>;
 
     constructor(
@@ -35,6 +36,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         this.fetchStateTopic = fetchStateTopic;
         this.payloadFormat = "json";
         this.optimistic = false;
+        this.allowOutdated = false;
         this._state = initialState;
     }
 
@@ -109,17 +111,20 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         const payload = this._parseMessage(message);
         const topicParams = exec(this.stateTopic, topic) ?? {};
         const newState = pure(this._mapState({ ...payload, ...topicParams }));
+        let updated = new Date();
 
         this._logger.trace("Incoming device state payload via MQTT", payload);
 
         try {
-            this.lastUpdate = payload._updatedAt ? this._parseDate(payload._updatedAt) : new Date();
+            updated = payload._updatedAt ? this._parseDate(payload._updatedAt) : updated;
         } catch (err) {
-            this.lastUpdate = new Date();
             this._logger.warn("Can't parse update date in state payload", err);
         }
 
-        this._update(newState);
+        if (this.allowOutdated || !this.lastUpdate || isAfter(updated, this.lastUpdate)) {
+            this.lastUpdate = updated;
+            this._update(newState, true);
+        }
     }
 
     private _setInternalState(newState: Partial<TState>, force = false): boolean {
@@ -129,7 +134,6 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
 
         if (force || !equal(this._state, nextState)) {
             this._state = Object.freeze(nextState);
-            this.eventbus?.emit("device.state_update", this, this.senses);
 
             return true;
         }
@@ -147,14 +151,21 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         return true;
     }
 
-    protected _update(patch: Partial<TState>): boolean {
+    protected _update(patch: Partial<TState>, force: boolean): boolean {
         const snapshot = this.getState();
 
         if (snapshot && snapshot._available !== this.available) {
             patch._available = this.available;
         }
 
-        return this._setInternalState(patch);
+        const updated = this._setInternalState(patch);
+
+        if (force || updated) {
+            this.eventbus?.emit("device.state_update", this, this.senses);
+            return true;
+        }
+
+        return false;
     }
 
     subscribeTopics(): Promise<ISubscriptionGrant[]> {
