@@ -4,6 +4,7 @@ import { MqttClient } from "mqtt";
 import Device from "../devices/Device";
 import { IGroup } from "../devices/Group";
 import { IRoom } from "../devices/Room";
+import drivers, { DriverMap } from "../drivers";
 import Discovery from "./Discovery";
 import Entity from "./Entity";
 import EventBus from "./EventBus";
@@ -17,7 +18,7 @@ export interface ISenses {
     debug: boolean;
     eventbus: EventBus;
     mqtt: MqttClient;
-    //http?: Application;
+    drivers: DriverMap;
     devices: Device[];
     services: IService[];
     rooms: IRoom[];
@@ -41,6 +42,7 @@ export class Senses implements ISenses {
     mqtt: MqttClient;
     http?: Application;
     states: IStateMachine;
+    drivers: DriverMap;
     devices: Device[];
     services: IService[];
     rooms: IRoom[];
@@ -66,6 +68,7 @@ export class Senses implements ISenses {
         this.domain = domain;
         this.name = name;
         this.debug = debug;
+        this.drivers = { ...drivers };
     }
 
     addService(service: IService): void {

@@ -1,4 +1,4 @@
-type PlatformType = "rest" | "ws-events" | "zwave" | "modbus" | "zigbee" | "ip" | "modbus-tcp";
+type PlatformType = "rest" | "ws-events" | "zwave" | "zwavejs" | "modbus" | "zigbee" | "ip" | "modbus-tcp";
 
 type Handshake = {
     uid: string;
@@ -8,6 +8,7 @@ type Handshake = {
     product: string;
     vendor: string;
     model?: string;
+    driver?: string;
     revision?: string;
     serialNo?: string;
     firmware?: string;
@@ -24,7 +25,7 @@ type Handshake = {
     features?: string[];
     tags?: string[];
     location?: string;
-    additional?: unknown;
+    additional?: Record<PropertyKey, unknown>;
     groups?: string[];
     _thread?: string;
     _version: "1.0";

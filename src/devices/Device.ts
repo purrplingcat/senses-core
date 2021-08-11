@@ -10,6 +10,7 @@ export interface DeviceInfo {
     model?: string;
     serialNumber?: string;
     revision?: string;
+    driver?: string;
 }
 
 export default abstract class Device<TState extends {} = {}> implements Entity, UniqueIdentity {
@@ -20,7 +21,6 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
     class: string | null = null;
     info: DeviceInfo;
     lastAlive: Date | null = null;
-    lastUpdate: Date | null = null;
     keepalive = false;
     timeout = 10000;
     room: string | null = null;
@@ -31,17 +31,20 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
     description?: string;
     attributes: Record<string, unknown>;
     readonly senses: ISenses;
+    protected _baseAttributes: Record<string, unknown>;
 
     constructor(senses: ISenses) {
         this.senses = senses;
         this.attributes = {};
         this.info = {};
+        this._baseAttributes = {};
     }
 
     abstract setState(state: Partial<TState>): Promise<boolean> | boolean;
     abstract getState(): Readonly<TState>;
     abstract update(patch?: Partial<TState>): void;
     abstract get available(): boolean;
+    abstract get lastUpdate(): Date;
 
     public get entityId(): string {
         return `${this.type}.${this.name}`;
@@ -52,7 +55,12 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
     }
 
     public getExtraAttrs(): Record<string, unknown> {
-        return { ...this.info, ...this.attributes };
+        return {
+            ...this.info,
+            ...this._baseAttributes,
+            ...this.attributes,
+            _constructor: this.constructor.name,
+        };
     }
 
     public updateFromShake(shake: Handshake): void {
@@ -74,6 +82,6 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
         this.description = shake.description;
         this.tags = shake.tags || [];
         this.via = shake.via;
-        this.attributes = toObject(shake.additional || {});
+        this.attributes = toObject(shake.additional || this.attributes);
     }
 }

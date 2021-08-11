@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import ITurnableDevice from "../devices/TurnableDevice";
-import BaseDevice, { DeviceState } from "../devices/BaseDevice";
-import { hexToRgb, pure, rgbToHex } from "../core/utils";
-import { ISenses } from "../core/Senses";
+import ITurnableDevice from "../../devices/TurnableDevice";
+import BaseDevice, { DeviceState } from "../../devices/BaseDevice";
+import { hexToRgb, rgbToHex } from "../../core/utils";
+import { ISenses } from "../../core/Senses";
 
 const int = (num: number) => Math.trunc(num);
 
@@ -25,9 +25,10 @@ export default class Light extends BaseDevice<LigthState> implements ITurnableDe
     type = "light";
     features: LightFeatures[] = [];
 
-    constructor(senses: ISenses, stateTopic: string, commandTopic: string, fetchTopic: string) {
-        super(senses, stateTopic, commandTopic, fetchTopic, {
+    constructor(senses: ISenses) {
+        super(senses, {
             _available: false,
+            _updatedAt: 0,
             brightness: 0,
             colorTemp: 0,
             rgbColor: "",
@@ -40,7 +41,7 @@ export default class Light extends BaseDevice<LigthState> implements ITurnableDe
         return this.getState().state ?? "unknown";
     }
 
-    async setState(state: Partial<LigthState>): Promise<boolean> {
+    protected _createPayload(state: Partial<LigthState>): any {
         const message: Record<string, number | string | boolean | undefined> = {};
 
         if (state.state) {
@@ -57,14 +58,7 @@ export default class Light extends BaseDevice<LigthState> implements ITurnableDe
             message.b = rgb?.b ?? 0;
         }
 
-        this._publish(this.commandTopic, pure(message));
-
-        if (this.optimistic) {
-            this.lastUpdate = new Date();
-            this._update(state, false);
-        }
-
-        return true;
+        return message;
     }
 
     turnOn(): boolean | Promise<boolean> {

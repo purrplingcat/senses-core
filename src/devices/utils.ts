@@ -1,19 +1,18 @@
 import consola from "consola";
 import Handshake, { DeviceType } from "../core/Handshake";
 import { ISenses } from "../core/Senses";
-import Light from "../mqtt/Light";
+import { DriverMap } from "../drivers";
 import BaseDevice from "./BaseDevice";
-import Sensor from "../mqtt/Sensor";
 import Device from "./Device";
 
 export function registerNewDevice(senses: ISenses, shake: Handshake, type: DeviceType): BaseDevice {
-    const device = createDevice(senses, shake, type);
-    updateDeviceInfo(device, shake);
+    const device = createDevice(senses, senses.drivers, shake, type);
 
+    updateDeviceInfo(device, shake);
     senses.eventbus.on("mqtt.message", device.onMqttMessage.bind(device));
     senses.eventbus.on("mqtt.connect", (mqtt) => {
         if (mqtt.connected && !mqtt.disconnecting) {
-            device.subscribeTopics();
+            device.subscribeTopics().catch((err) => consola.warn(`${device.uid}:`, err));
             device.requestState();
         }
     });
@@ -41,21 +40,34 @@ export function registerNewDevice(senses: ISenses, shake: Handshake, type: Devic
     return device;
 }
 
-function createDevice(senses: ISenses, shake: Handshake, type: DeviceType): BaseDevice {
-    const stateTopic = shake.comm?.find((c) => c.type === "state")?.topic || `${shake.uid}/state`;
-    const setTopic = shake.comm?.find((c) => c.type === "set")?.topic || `${shake.uid}/set`;
-    const getTopic = shake.comm?.find((c) => c.type === "fetch")?.topic || `${shake.uid}/get`;
-
-    switch (type.type) {
-        case "light":
-            return new Light(senses, stateTopic, setTopic, getTopic);
-        case "sensor":
-            const field = Reflect.get(shake.additional as Record<string, unknown>, "field") || "value";
-
-            return new Sensor(senses, stateTopic, getTopic, field);
-        default:
-            throw new Error(`Unknown device type ${type.type}`);
+function resolveDriver(shake: Handshake): string {
+    if (shake.driver) {
+        return shake.driver;
     }
+
+    if (["ashley", "callmefoxie", "purrplingcat"].includes(shake.vendor.toLowerCase())) {
+        return "senses";
+    }
+
+    if (["dummy", "fake"].includes(shake.vendor.toLowerCase())) {
+        return "dummy";
+    }
+
+    return "senses";
+}
+
+function createDevice(senses: ISenses, drivers: DriverMap, shake: Handshake, type: DeviceType): BaseDevice {
+    const driverName = resolveDriver(shake);
+    const driver = drivers[driverName];
+
+    if (typeof driver !== "function") {
+        throw new Error("Unknown driver: " + driverName);
+    }
+
+    const device = driver(senses, type, shake);
+    device.info.driver = driverName;
+
+    return device;
 }
 
 export function updateDeviceInfo(device: Device, shake: Handshake): void {

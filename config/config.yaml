@@ -22,8 +22,12 @@ device:
       title: Kuchyně - světlo
       type: light
       class: light
-      commandTopic: modbus/gw0/kitchenlight0/set
-      stateTopic: modbus/gw0/kitchenlight0/state
+      room: kitchen
+      publisher:
+        - topic: modbus/gw0/kitchenlight0/+name/set
+          format: number
+      subscriber: 
+        - topic: modbus/gw0/kitchenlight0/state
       features: [colorTemp, brightness]
       availability:
         - topic: modbus/gw0/kitchenlight0/presence

@@ -1,42 +1,43 @@
 import consola from "consola";
-import { differenceInMilliseconds, isAfter, parseISO } from "date-fns";
+import { differenceInMilliseconds, isAfter, isDate, parseISO } from "date-fns";
 import { equal } from "fast-shallow-equal";
 import { ISubscriptionGrant, MqttClient } from "mqtt";
-import { exec, matches } from "mqtt-pattern";
+import { exec, matches, fill, clean } from "mqtt-pattern";
 import EventBus from "../core/EventBus";
 import Handshake from "../core/Handshake";
 import { ISenses } from "../core/Senses";
 import { isEmptyObject, pure } from "../core/utils";
 import Device from "./Device";
 
+export type TopicProvider = {
+    topic: string;
+    name?: string;
+    format?: string;
+};
+
 export interface DeviceState {
     _available: boolean;
+    _updatedAt: number | Date;
 }
 
+type StringMap = Record<string, string>;
+
 export default abstract class BaseDevice<TState extends DeviceState = DeviceState> extends Device<TState> {
-    stateTopic: string;
-    commandTopic: string;
-    fetchStateTopic: string;
-    payloadFormat: "json" | "string" | "number" | "boolean";
+    subscribers: TopicProvider[];
+    publishers: TopicProvider[];
+    polls: string[];
     optimistic: boolean;
-    allowOutdated: boolean;
+    incremental: boolean;
     update = (): boolean => this._update({}, false);
     private _state: Readonly<TState>;
 
-    constructor(
-        senses: ISenses,
-        stateTopic: string,
-        commandTopic: string,
-        fetchStateTopic: string,
-        initialState: TState,
-    ) {
+    constructor(senses: ISenses, initialState: TState) {
         super(senses);
-        this.stateTopic = stateTopic;
-        this.commandTopic = commandTopic;
-        this.fetchStateTopic = fetchStateTopic;
-        this.payloadFormat = "json";
+        this.subscribers = [];
+        this.publishers = [];
+        this.polls = [];
         this.optimistic = false;
-        this.allowOutdated = false;
+        this.incremental = false;
         this._state = initialState;
     }
 
@@ -46,6 +47,10 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
 
     get eventbus(): EventBus {
         return this.senses.eventbus;
+    }
+
+    get lastUpdate(): Date {
+        return new Date(this._state._updatedAt);
     }
 
     getState(): Readonly<TState> {
@@ -59,8 +64,9 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
                 return;
             }
 
+            const message = typeof payload === "string" ? payload : JSON.stringify(payload);
             this._logger.debug(`Device ${this.uid} are publishing mqtt message on topic:`, topic);
-            this.mqtt.publish(topic, JSON.stringify(payload), (err) => {
+            this.mqtt.publish(topic, message, (err) => {
                 if (err) {
                     reject(err);
                 }
@@ -72,58 +78,123 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     }
 
     requestState(): void {
-        if (this.fetchStateTopic) {
-            this._publish(this.fetchStateTopic, null);
+        this.polls.forEach((topic) => this._publish(topic, null));
+    }
+
+    private _parseJson(message: string): any {
+        try {
+            return JSON.parse(message);
+        } catch (err) {
+            this._logger.warn("Can't parse JSON payload:", err);
+            return {};
         }
     }
 
-    private _parseMessage(message: string): any {
-        switch (this.payloadFormat) {
-            case "boolean":
-                return ["true", "yes", "1", "ok", "valid", "on", "available"].includes(message);
-            case "number":
-                return Number(message);
+    private _reducePayload(publisher: TopicProvider, payload: any, current: any): unknown {
+        const name = payload.name || "";
+
+        if (!publisher.format) {
+            if (typeof current !== "object") {
+                current = {};
+            }
+
+            current[name] = payload[name];
+
+            return current;
+        }
+
+        switch (publisher.format) {
             case "string":
-                return String(message);
-            case "json":
-                try {
-                    return JSON.parse(message);
-                } catch (err) {
-                    this._logger.warn("Can't parse JSON payload:", err);
-                    return message;
-                }
+                return String(payload[name]);
+            case "number":
+                return Number(payload[name]);
+            case "boolean":
+                return Boolean(payload[name]);
+            case "raw":
+                return payload[name];
+            case "void":
+                return "";
+            case "zwavejs":
+                return { value: payload[name] };
             default:
-                throw new Error(`Invalid payload format: ${this.payloadFormat}`);
+                this._logger.error(`Unknown payload format '${publisher.format}'`);
         }
     }
 
-    private _parseDate(encoded: number | string) {
+    private _parseMessage(message: string, topicParams: StringMap, subscription: TopicProvider): Record<any, any> {
+        const payload = { ...subscription, ...topicParams };
+        const name: string = payload.name || "";
+
+        if (!subscription.format) {
+            return Object.assign(payload, this._parseJson(message));
+        }
+
+        if (!name) this._logger.warn("Missing parameter 'name' in subscription:", payload);
+
+        switch (subscription.format) {
+            case "string":
+                Reflect.set(payload, name, String(message));
+                break;
+            case "number":
+                Reflect.set(payload, name, Number(message));
+                break;
+            case "boolean":
+                Reflect.set(payload, name, Boolean(message));
+                break;
+            case "raw":
+                Reflect.set(payload, name, message);
+                break;
+            case "void":
+                break;
+            case "zwavejs":
+                const raw = this._parseJson(message);
+
+                Reflect.set(payload, name, raw.value);
+                Reflect.set(payload, "_updatedAt", raw.time);
+                break;
+            default:
+                this._logger.error(`Unknown payload format '${subscription.format}'`);
+        }
+
+        return payload;
+    }
+
+    protected _parseDate(encoded: number | string | Date): Date {
+        if (isDate(encoded)) {
+            return <Date>encoded;
+        }
+
         if (typeof encoded === "number") {
             return new Date(encoded);
         }
 
-        return parseISO(encoded);
+        return parseISO(<string>encoded);
     }
 
     public onMqttMessage(topic: string, message: string): void {
-        if (!matches(this.stateTopic, topic)) return;
+        for (const subscriber of this.subscribers) {
+            if (matches(subscriber.topic, topic)) {
+                return this._processMessage(subscriber, topic, message);
+            }
+        }
+    }
 
-        const payload = this._parseMessage(message);
-        const topicParams = exec(this.stateTopic, topic) ?? {};
-        const newState = pure(this._mapState({ ...payload, ...topicParams }));
-        let updated = new Date();
+    private _processMessage(subscription: TopicProvider, topic: string, message: string) {
+        const topicParams = exec(subscription.topic, topic) ?? {};
+        const payload = this._parseMessage(message, topicParams, subscription);
+        const newState = pure(this._mapState(payload));
 
-        this._logger.trace("Incoming device state payload via MQTT", payload);
+        this._logger.trace("Incoming device state payload via MQTT", subscription.topic, topic, payload);
 
         try {
-            updated = payload._updatedAt ? this._parseDate(payload._updatedAt) : updated;
+            newState._updatedAt = this._parseDate(payload._updatedAt ?? Date.now()).getTime();
         } catch (err) {
+            newState._updatedAt = Date.now();
             this._logger.warn("Can't parse update date in state payload", err);
         }
 
-        if (this.allowOutdated || !this.lastUpdate || isAfter(updated, this.lastUpdate)) {
-            this.lastUpdate = updated;
-            this._update(newState, true);
+        if (!this.incremental || isAfter(newState._updatedAt, this.lastUpdate)) {
+            this._update(newState, false);
         }
     }
 
@@ -142,6 +213,42 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     }
 
     protected abstract _mapState(payload: unknown): Partial<TState>;
+    protected abstract _createPayload(state: Partial<TState>): any;
+
+    private _mapOutgoingMessages(payload: object): [string, unknown][] {
+        const outgoing: Record<string, unknown> = {};
+
+        for (const key of Object.keys(payload)) {
+            const publishers = this.publishers.filter((p) => !p.name || p.name === key);
+
+            for (const publisher of publishers) {
+                const params = { name: key, ...publisher, ...payload };
+                const topic = fill(publisher.topic, params);
+
+                outgoing[topic] = this._reducePayload(publisher, params, outgoing[topic]);
+            }
+        }
+
+        return Object.entries(outgoing);
+    }
+
+    setState(state: Partial<TState>): boolean | Promise<boolean> {
+        const payload: object = pure(this._createPayload(state));
+
+        if (typeof payload !== "object") {
+            throw new Error(`${this.uid}: Invalid type '${typeof payload}' - Outgoing payload must be an object`);
+        }
+
+        for (const [topic, message] of this._mapOutgoingMessages(payload)) {
+            this._publish(topic, message).catch((err) => this._logger.error(`${this.uid}:`, err));
+        }
+
+        if (this.optimistic) {
+            this._update(state, true);
+        }
+
+        return true;
+    }
 
     public get available(): boolean {
         if (this.keepalive) {
@@ -170,7 +277,9 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
 
     subscribeTopics(): Promise<ISubscriptionGrant[]> {
         return new Promise((resolve, reject) => {
-            this.mqtt?.subscribe(this.stateTopic, (err, granted) => {
+            const topics = this.subscribers.map((s) => clean(s.topic));
+
+            this.mqtt?.subscribe(topics, (err, granted) => {
                 if (err) reject(err);
 
                 this.requestState();
@@ -181,15 +290,11 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     }
 
     updateFromShake(shake: Handshake): void {
-        const stateTopic = shake.comm?.find((c) => c.type === "state")?.topic || `${shake.uid}/state`;
-        const setTopic = shake.comm?.find((c) => c.type === "set")?.topic || `${shake.uid}/set`;
-        const getTopic = shake.comm?.find((c) => c.type === "fetch")?.topic || `${shake.uid}/get`;
-
         super.updateFromShake(shake);
-        this.payloadFormat = shake.stateFormat || "json";
-        this.stateTopic = stateTopic;
-        this.commandTopic = setTopic;
-        this.fetchStateTopic = getTopic;
+        this.subscribers = shake.comm?.filter((c) => c.type === "state") || [];
+        this.publishers = shake.comm?.filter((c) => c.type === "set") || [];
+        this.polls = shake.comm?.filter((c) => c.type === "fetch").map((c) => c.topic) || [];
+        this.incremental = Boolean((shake.additional as any).incremental ?? this.incremental);
     }
 
     static stateNumberToStr(state: number): "on" | "off" | "unknown" {

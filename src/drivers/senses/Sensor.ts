@@ -1,6 +1,6 @@
-import Handshake from "../core/Handshake";
-import { ISenses } from "../core/Senses";
-import BaseDevice, { DeviceState } from "../devices/BaseDevice";
+import Handshake from "../../core/Handshake";
+import { ISenses } from "../../core/Senses";
+import BaseDevice, { DeviceState } from "../../devices/BaseDevice";
 
 export interface SensorState extends DeviceState {
     value: number;
@@ -9,9 +9,10 @@ export interface SensorState extends DeviceState {
 export default class Sensor extends BaseDevice<SensorState> {
     stateField: string;
 
-    constructor(senses: ISenses, stateTopic: string, getTopic: string, field = "value") {
-        super(senses, stateTopic, "", getTopic, {
+    constructor(senses: ISenses, field = "value") {
+        super(senses, {
             _available: false,
+            _updatedAt: 0,
             value: 0,
         });
 
@@ -19,7 +20,7 @@ export default class Sensor extends BaseDevice<SensorState> {
         this.type = "sensor";
     }
 
-    setState(): boolean | Promise<boolean> {
+    setState(): boolean {
         return false;
     }
 
@@ -41,5 +42,9 @@ export default class Sensor extends BaseDevice<SensorState> {
         }
 
         return {};
+    }
+
+    protected _createPayload(): any {
+        return null;
     }
 }

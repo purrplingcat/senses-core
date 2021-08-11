@@ -1,5 +1,4 @@
 import consola from "consola";
-import UIDGenerator from "uid-generator";
 import { ISenses } from "../core/Senses";
 import { YAMLMap } from "yaml/types";
 import Handshake, { decodeDeviceType } from "../core/Handshake";
@@ -74,10 +73,10 @@ function setupDeviceFromConfig(senses: ISenses, platform: string, config: YAMLMa
     const type = decodeDeviceType(
         config.has("class") ? `device/${platform}, ${config.get("class")}` : `device/${platform}`,
     );
-    const generator = new UIDGenerator();
+    const generatedUid = `${platform}${config.has("room") ? `-${config.get("room")}` : ""}-${config.get("name")}`;
     const shake: Handshake = {
         _version: "1.0",
-        uid: config.get("uid") ?? `${platform}-${config.get("name")}-${generator.generateSync()}`,
+        uid: config.get("uid") ?? generatedUid,
         available: true,
         keepalive: false,
         keepaliveTimeout: 0,
@@ -99,13 +98,18 @@ function setupDeviceFromConfig(senses: ISenses, platform: string, config: YAMLMa
         type: type.fullQualifiedType,
         additional: {
             field: config.get("field"),
+            incremental: config.get("incremental"),
         },
     };
 
     const device = registerNewDevice(senses, shake, type);
 
+    device.subscribers = config.get("subscriber")?.toJSON() || [];
+    device.publishers = config.get("publisher")?.toJSON() || [];
+    device.polls = config.get("poll")?.toJSON() || [];
+
     if (senses.mqtt.connected) {
-        device.subscribeTopics();
+        device.subscribeTopics().catch((err) => consola.warn(`${device.uid}:`, err));
         device.requestState();
     }
 

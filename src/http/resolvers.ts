@@ -1,5 +1,6 @@
-import { UserInputError } from "apollo-server-express";
+import { ApolloError, UserInputError } from "apollo-server-express";
 import { ISenses } from "../core/Senses";
+import BaseDevice from "../devices/BaseDevice";
 import Device from "../devices/Device";
 import { IRoom } from "../devices/Room";
 import { isTurnableDevice } from "../devices/TurnableDevice";
@@ -74,7 +75,7 @@ export default function createQueryResolvers(senses: ISenses): Record<string, (p
             const room = senses.rooms.find((r) => r.name === args.name);
 
             if (!room) {
-                throw new UserInputError("Room nout found", { code: 404 });
+                throw new UserInputError("Room not found", { code: 404 });
             }
 
             return room;
@@ -88,6 +89,18 @@ export default function createQueryResolvers(senses: ISenses): Record<string, (p
             }
 
             return rooms;
+        },
+        topics: (_, args) => {
+            const device = senses.devices.find((d) => d.uid == args.deviceUid) as BaseDevice;
+
+            if (!device) throw new ApolloError("Requested resource not found", "NOT_FOUND");
+
+            return {
+                deviceUid: device.uid,
+                subscribers: device.subscribers,
+                publishers: device.publishers,
+                polls: device.polls,
+            };
         },
     };
 }

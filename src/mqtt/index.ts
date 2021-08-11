@@ -81,6 +81,7 @@ export function setupPlatform(platform: string, senses: ISenses, config: YAMLMap
         location: config.get("room"),
         description: config.get("description"),
         stateFormat: config.get("format") || "json",
+        driver: config.get("driver") || "senses",
         tags: asArray<string>(config.get("tags")),
         groups: config.get("groups"),
         comm: [
@@ -92,6 +93,7 @@ export function setupPlatform(platform: string, senses: ISenses, config: YAMLMap
         type: type.fullQualifiedType,
         additional: {
             field: config.get("field"),
+            format: config.get("format"),
         },
     };
 

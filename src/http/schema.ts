@@ -57,11 +57,24 @@ export default gql`
         type: String!
     }
 
+    type TopicProvider {
+        topic: String
+        name: String
+        format: String
+    }
+
+    type Topics {
+        subscribers: [TopicProvider]
+        publishers: [TopicProvider]
+        polls: [String]
+    }
+
     type Query {
         devices(filter: JSON): [Device]
         device(uid: ID!): Device!
         rooms(filter: JSON): [Room]
         room(name: String!): Room!
+        topics(deviceUid: ID!): Topics!
     }
 
     type Mutation {
