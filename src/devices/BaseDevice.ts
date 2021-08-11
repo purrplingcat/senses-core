@@ -9,10 +9,15 @@ import { ISenses } from "../core/Senses";
 import { isEmptyObject, pure } from "../core/utils";
 import Device from "./Device";
 
-export type TopicProvider = {
+export type TopicSubscriber = {
     topic: string;
     name?: string;
     format?: string;
+};
+
+export type TopicPublisher = TopicSubscriber & {
+    include?: string[];
+    exclude?: string[];
 };
 
 export interface DeviceState {
@@ -23,8 +28,8 @@ export interface DeviceState {
 type StringMap = Record<string, string>;
 
 export default abstract class BaseDevice<TState extends DeviceState = DeviceState> extends Device<TState> {
-    subscribers: TopicProvider[];
-    publishers: TopicProvider[];
+    subscribers: TopicSubscriber[];
+    publishers: TopicPublisher[];
     polls: string[];
     optimistic: boolean;
     incremental: boolean;
@@ -78,7 +83,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     }
 
     requestState(): void {
-        this.polls.forEach((topic) => this._publish(topic, null));
+        this.polls.forEach((topic) => this._publish(topic, ""));
     }
 
     private _parseJson(message: string): any {
@@ -90,15 +95,13 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         }
     }
 
-    private _reducePayload(publisher: TopicProvider, payload: any, current: any): unknown {
+    private _reducePayload(publisher: TopicSubscriber, payload: any, current: any): unknown {
         const name = payload.name || "";
 
         if (!publisher.format) {
             if (typeof current !== "object") {
                 current = {};
             }
-
-            current[name] = payload[name];
 
             return current;
         }
@@ -121,7 +124,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         }
     }
 
-    private _parseMessage(message: string, topicParams: StringMap, subscription: TopicProvider): Record<any, any> {
+    private _parseMessage(message: string, topicParams: StringMap, subscription: TopicSubscriber): Record<any, any> {
         const payload = { ...subscription, ...topicParams };
         const name: string = payload.name || "";
 
@@ -179,7 +182,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         }
     }
 
-    private _processMessage(subscription: TopicProvider, topic: string, message: string) {
+    private _processMessage(subscription: TopicSubscriber, topic: string, message: string) {
         const topicParams = exec(subscription.topic, topic) ?? {};
         const payload = this._parseMessage(message, topicParams, subscription);
         const newState = pure(this._mapState(payload));
@@ -218,6 +221,13 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     private _mapOutgoingMessages(payload: object): [string, unknown][] {
         const outgoing: Record<string, unknown> = {};
 
+        function isIncluded(name: string, includes?: string[], excludes?: string[]) {
+            const excluded = Array.isArray(excludes) && excludes.includes(name);
+            const included = !Array.isArray(includes) || includes.includes(name);
+
+            return !excluded && included;
+        }
+
         for (const key of Object.keys(payload)) {
             const publishers = this.publishers.filter((p) => !p.name || p.name === key);
 
@@ -225,7 +235,9 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
                 const params = { name: key, ...publisher, ...payload };
                 const topic = fill(publisher.topic, params);
 
-                outgoing[topic] = this._reducePayload(publisher, params, outgoing[topic]);
+                if (isIncluded(params.name, params.include, params.exclude)) {
+                    outgoing[topic] = this._reducePayload(publisher, params, outgoing[topic]);
+                }
             }
         }
 
@@ -252,7 +264,11 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
 
     public get available(): boolean {
         if (this.keepalive) {
-            return this.lastAlive != null && differenceInMilliseconds(new Date(), this.lastAlive) < this.timeout;
+            if (this.timeout > 0) {
+                return this.lastAlive != null && differenceInMilliseconds(new Date(), this.lastAlive) < this.timeout;
+            }
+
+            return this.lastAlive != null;
         }
 
         return true;

@@ -2,28 +2,34 @@ import { ISenses } from "../core/Senses";
 import Device from "../devices/Device";
 import MQTTPattern from "mqtt-pattern";
 import consola from "consola";
+import { YAMLMap } from "yaml/types";
 
 export const name = "expose";
 export const domain = name;
 
-export function setup(senses: ISenses): void {
+export function setup(senses: ISenses, config: YAMLMap): void {
+    const scope = config.get("scope") || "senses";
+
     senses.eventbus.on("mqtt.connect", (mqtt) => {
         if (senses.mqtt == null) return;
 
-        mqtt.subscribe(`device/${senses.domain}/+/+/set`);
-        mqtt.subscribe(`device/${senses.domain}/+/call`);
+        mqtt.subscribe(`${senses.domain}/${scope}/device/+/+/set`);
+        mqtt.subscribe(`${senses.domain}/${scope}/service/+/call`);
     });
 
     senses.eventbus.on("mqtt.message", (topic, message) => {
-        if (topic.startsWith("device/")) handleDevice(topic, message);
-        if (topic.startsWith("service/")) handleService(topic, message);
+        if (topic.startsWith(`${senses.domain}/${scope}/device/`)) handleDevice(topic, message);
+        if (topic.startsWith(`${senses.domain}/${scope}/service/`)) handleService(topic, message);
     });
 
     senses.eventbus.on("device.state_update", (device: Device) => {
         if (senses.mqtt?.connected) {
-            const room = device.room || "none";
+            const room = device.room || "-";
 
-            senses.mqtt.publish(`${senses.domain}/${room}/${device.name}`, JSON.stringify(device.getState()));
+            senses.mqtt.publish(
+                `${senses.domain}/${scope}/device/${room}/${device.name}`,
+                JSON.stringify(device.getState()),
+            );
         }
     });
 

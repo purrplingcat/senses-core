@@ -28,6 +28,8 @@ device:
           format: number
       subscriber: 
         - topic: modbus/gw0/kitchenlight0/state
+      poll:
+        - modbus/gw0/kitchenlight0/get
       features: [colorTemp, brightness]
       availability:
         - topic: modbus/gw0/kitchenlight0/presence
@@ -39,8 +41,10 @@ device:
       room: kitchen
       type: sensor
       groups: [room.kitchen]
-      stateTopic: device/roztoky/kitchen/heater
+      subscribers: 
+        - topic: device/roztoky/kitchen/heater
       field: temperature
+      unit: °C
       tags:
         - main
 

@@ -73,17 +73,17 @@ function setupDeviceFromConfig(senses: ISenses, platform: string, config: YAMLMa
     const type = decodeDeviceType(
         config.has("class") ? `device/${platform}, ${config.get("class")}` : `device/${platform}`,
     );
-    const generatedUid = `${platform}${config.has("room") ? `-${config.get("room")}` : ""}-${config.get("name")}`;
+    const uid = `${platform}${config.has("room") ? `-${config.get("room")}` : ""}-${config.get("name")}`;
     const shake: Handshake = {
         _version: "1.0",
-        uid: config.get("uid") ?? generatedUid,
+        uid: config.get("uid") ?? uid,
         available: true,
         keepalive: false,
         keepaliveTimeout: 0,
         name: config.get("title") || config.get("name"),
         alias: config.get("name"),
-        product: config.get("product") || "Senses device",
-        vendor: config.get("vendor") || "Senses",
+        product: config.get("product") ?? "",
+        vendor: config.get("vendor") ?? "",
         location: config.get("room"),
         description: config.get("description"),
         stateFormat: config.get("format") || "json",

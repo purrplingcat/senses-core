@@ -8,6 +8,7 @@ export interface SensorState extends DeviceState {
 
 export default class Sensor extends BaseDevice<SensorState> {
     stateField: string;
+    unit?: string;
 
     constructor(senses: ISenses, field = "value") {
         super(senses, {
@@ -32,6 +33,7 @@ export default class Sensor extends BaseDevice<SensorState> {
         super.updateFromShake(shake);
 
         this.stateField = Reflect.get(shake.additional as Record<string, unknown>, "field") || "value";
+        this.unit = <string>shake.additional?.unit;
     }
 
     protected _mapState(payload: unknown): Partial<SensorState> {
