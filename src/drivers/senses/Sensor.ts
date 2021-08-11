@@ -1,23 +1,42 @@
 import Handshake from "../../core/Handshake";
 import { ISenses } from "../../core/Senses";
 import BaseDevice, { DeviceState } from "../../devices/BaseDevice";
+import { Payload } from "../../types/senses";
 
 export interface SensorState extends DeviceState {
-    value: number;
+    [key: string]: number | boolean | string;
+}
+
+export type Field = {
+    name?: string;
+    title: string;
+    type: string;
+    unit?: string;
+};
+
+function isValidValue(value: unknown): value is number | boolean | string {
+    return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
+}
+
+function getDefaults(fields: string[]) {
+    const acc: Record<string, number> = {};
+
+    fields.forEach((f) => (acc[f] = 0));
+
+    return acc;
 }
 
 export default class Sensor extends BaseDevice<SensorState> {
-    stateField: string;
-    unit?: string;
+    fields: Record<string, Field>;
 
-    constructor(senses: ISenses, field = "value") {
+    constructor(senses: ISenses, fields: Record<string, Field>) {
         super(senses, {
             _available: false,
             _updatedAt: 0,
-            value: 0,
+            ...getDefaults(Object.keys(fields)),
         });
 
-        this.stateField = field;
+        this.fields = fields;
         this.type = "sensor";
     }
 
@@ -26,27 +45,30 @@ export default class Sensor extends BaseDevice<SensorState> {
     }
 
     getExtraAttrs(): Record<string, unknown> {
-        return { ...super.getExtraAttrs(), stateField: this.stateField };
+        return { ...super.getExtraAttrs(), fields: this.fields };
     }
 
     updateFromShake(shake: Handshake): void {
         super.updateFromShake(shake);
 
-        this.stateField = Reflect.get(shake.additional as Record<string, unknown>, "field") || "value";
-        this.unit = <string>shake.additional?.unit;
+        this.fields = (shake.additional?.fields || {}) as Record<PropertyKey, Field>;
     }
 
-    protected _mapState(payload: unknown): Partial<SensorState> {
-        if (typeof payload === "string" || typeof payload === "number" || typeof payload === "boolean") {
-            return { value: Number(payload) };
-        } else if (typeof payload === "object" && payload != null && Reflect.has(payload, this.stateField)) {
-            return { value: Number(Reflect.get(payload, this.stateField) ?? 0) };
+    protected _mapState(payload: Payload): Partial<SensorState> {
+        const state: Partial<SensorState> = {};
+
+        for (const [key, field] of Object.entries(this.fields)) {
+            const value = payload[field.name || key];
+
+            if (payload.hasOwnProperty(key) && isValidValue(value)) {
+                state[key] = value;
+            }
         }
 
-        return {};
+        return state;
     }
 
-    protected _createPayload(): any {
-        return null;
+    protected _createPayload(): Payload {
+        throw new Error("Method not implemented.");
     }
 }

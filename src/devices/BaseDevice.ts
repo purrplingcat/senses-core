@@ -7,6 +7,7 @@ import EventBus from "../core/EventBus";
 import Handshake from "../core/Handshake";
 import { ISenses } from "../core/Senses";
 import { isEmptyObject, pure } from "../core/utils";
+import { Payload, StringMap } from "../types/senses";
 import Device from "./Device";
 
 export type TopicSubscriber = {
@@ -22,10 +23,8 @@ export type TopicPublisher = TopicSubscriber & {
 
 export interface DeviceState {
     _available: boolean;
-    _updatedAt: number | Date;
+    _updatedAt: number;
 }
-
-type StringMap = Record<string, string>;
 
 export default abstract class BaseDevice<TState extends DeviceState = DeviceState> extends Device<TState> {
     subscribers: TopicSubscriber[];
@@ -124,7 +123,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         }
     }
 
-    private _parseMessage(message: string, topicParams: StringMap, subscription: TopicSubscriber): Record<any, any> {
+    private _parseMessage(message: string, topicParams: StringMap, subscription: TopicSubscriber): Payload {
         const payload = { ...subscription, ...topicParams };
         const name: string = payload.name || "";
 
@@ -215,8 +214,8 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         return false;
     }
 
-    protected abstract _mapState(payload: unknown): Partial<TState>;
-    protected abstract _createPayload(state: Partial<TState>): any;
+    protected abstract _mapState(payload: Payload): Partial<TState>;
+    protected abstract _createPayload(state: Partial<TState>): Payload;
 
     private _mapOutgoingMessages(payload: object): [string, unknown][] {
         const outgoing: Record<string, unknown> = {};

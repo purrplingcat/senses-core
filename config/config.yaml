@@ -36,15 +36,18 @@ device:
           payload_available: online
           payload_unavailable: offline
     - name: temperature
-      title: Teplota
+      title: Teplota v místnosti
       class: temperature
       room: kitchen
       type: sensor
       groups: [room.kitchen]
-      subscribers: 
+      subscriber: 
         - topic: device/roztoky/kitchen/heater
-      field: temperature
-      unit: °C
+      mainField: temperature
+      fields:
+        temperature:
+          title: Teplota
+          type: temperature
       tags:
         - main
 

@@ -97,7 +97,8 @@ function setupDeviceFromConfig(senses: ISenses, platform: string, config: YAMLMa
         features: asArray(config.get("features")),
         type: type.fullQualifiedType,
         additional: {
-            field: config.get("field"),
+            fields: config.get("fields")?.toJSON(),
+            mainField: config.get("mainField"),
             incremental: config.get("incremental"),
         },
     };
