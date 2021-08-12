@@ -6,7 +6,7 @@ import { exec, matches, fill, clean } from "mqtt-pattern";
 import EventBus from "../core/EventBus";
 import Handshake from "../core/Handshake";
 import { ISenses } from "../core/Senses";
-import { isEmptyObject, isIncluded, pick, pure } from "../core/utils";
+import { isEmptyObject, isIncluded, omit, pick, pure } from "../core/utils";
 import { Payload, StringMap } from "../types/senses";
 import Device from "./Device";
 
@@ -122,7 +122,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     }
 
     private _parseMessage(message: string, topicParams: StringMap, subscription: TopicRoute): Payload {
-        const name: string = subscription.name || topicParams.name || "";
+        const name: string = subscription.name || topicParams._name || "";
         const payload = { ...topicParams };
 
         if (!subscription.format) {
@@ -232,7 +232,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     protected abstract _mapState(payload: Payload): Partial<TState>;
     protected abstract _createPayload(state: Partial<TState>): Payload;
 
-    private _mapOutgoingMessages(payload: object): [string, unknown][] {
+    private _mapOutgoingMessages(payload: Payload): [string, unknown][] {
         const outgoing: Record<string, unknown> = {};
 
         for (const key of Object.keys(payload)) {
@@ -240,11 +240,17 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
 
             for (const publisher of publishers) {
                 const name = publisher.name || key;
-                const topic = fill(publisher.topic, { ...payload, name });
+                const topic = fill(publisher.topic, { ...payload, _name: name });
+                const assignedInTopic = Object.keys(exec(publisher.topic, topic) || {});
 
                 // Only picked fields. When params.pick is not set, all fields are picked
                 if (isIncluded(name, publisher.pick)) {
-                    outgoing[topic] = this._reducePayload(name, publisher, payload, outgoing[topic]);
+                    outgoing[topic] = this._reducePayload(
+                        name,
+                        publisher,
+                        omit(payload, assignedInTopic),
+                        outgoing[topic],
+                    );
                 }
             }
         }
@@ -253,7 +259,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     }
 
     setState(state: Partial<TState>): boolean | Promise<boolean> {
-        const payload: object = pure(this._createPayload(state));
+        const payload = pure(this._createPayload(state));
 
         if (typeof payload !== "object") {
             throw new Error(`${this.uid}: Invalid type '${typeof payload}' - Outgoing payload must be an object`);

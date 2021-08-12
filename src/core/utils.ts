@@ -72,3 +72,15 @@ export function pick<T extends object, K extends keyof T>(obj: T, toPick: K[]): 
 
     return picked as Pick<T, K>;
 }
+
+export function omit<T extends object, K extends keyof T>(obj: T, toOmit: K[]): Omit<T, K> {
+    const omited = { ...obj };
+
+    for (const key of toOmit) {
+        if (obj.hasOwnProperty(key)) {
+            Reflect.deleteProperty(omited, key);
+        }
+    }
+
+    return omited as Omit<T, K>;
+}

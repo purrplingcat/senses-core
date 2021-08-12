@@ -24,7 +24,7 @@ device:
       class: light
       room: kitchen
       publisher:
-        - topic: modbus/gw0/kitchenlight0/+name/set
+        - topic: modbus/gw0/kitchenlight0/+_name/set
           format: number
         - topic: modbus/gw0/kitchenlight0/set
       subscriber: 
