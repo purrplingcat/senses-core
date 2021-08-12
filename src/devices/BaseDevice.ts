@@ -6,19 +6,17 @@ import { exec, matches, fill, clean } from "mqtt-pattern";
 import EventBus from "../core/EventBus";
 import Handshake from "../core/Handshake";
 import { ISenses } from "../core/Senses";
-import { isEmptyObject, pure } from "../core/utils";
+import { isEmptyObject, isIncluded, pick, pure } from "../core/utils";
 import { Payload, StringMap } from "../types/senses";
 import Device from "./Device";
 
-export type TopicSubscriber = {
+export type TopicRoute = {
     topic: string;
     name?: string;
     format?: string;
-};
-
-export type TopicPublisher = TopicSubscriber & {
-    include?: string[];
-    exclude?: string[];
+    contains?: string[];
+    notContains?: string[];
+    pick?: string[];
 };
 
 export interface DeviceState {
@@ -27,8 +25,8 @@ export interface DeviceState {
 }
 
 export default abstract class BaseDevice<TState extends DeviceState = DeviceState> extends Device<TState> {
-    subscribers: TopicSubscriber[];
-    publishers: TopicPublisher[];
+    subscribers: TopicRoute[];
+    publishers: TopicRoute[];
     polls: string[];
     optimistic: boolean;
     incremental: boolean;
@@ -94,13 +92,15 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         }
     }
 
-    private _reducePayload(publisher: TopicSubscriber, payload: any, current: any): unknown {
+    private _reducePayload(publisher: TopicRoute, payload: any, current: any): unknown {
         const name = payload.name || "";
 
         if (!publisher.format) {
             if (typeof current !== "object") {
                 current = {};
             }
+
+            current[name] = payload[name];
 
             return current;
         }
@@ -123,7 +123,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         }
     }
 
-    private _parseMessage(message: string, topicParams: StringMap, subscription: TopicSubscriber): Payload {
+    private _parseMessage(message: string, topicParams: StringMap, subscription: TopicRoute): Payload {
         const payload = { ...subscription, ...topicParams };
         const name: string = payload.name || "";
 
@@ -175,29 +175,46 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
 
     public onMqttMessage(topic: string, message: string): void {
         for (const subscriber of this.subscribers) {
-            if (matches(subscriber.topic, topic)) {
-                return this._processMessage(subscriber, topic, message);
+            // Pass next route when unmatched topic or unprocessed message
+            if (matches(subscriber.topic, topic) && this._processMessage(subscriber, topic, message)) {
+                return;
             }
         }
     }
 
-    private _processMessage(subscription: TopicSubscriber, topic: string, message: string) {
+    private _processMessage(subscription: TopicRoute, topic: string, message: string): boolean {
         const topicParams = exec(subscription.topic, topic) ?? {};
         const payload = this._parseMessage(message, topicParams, subscription);
-        const newState = pure(this._mapState(payload));
 
         this._logger.trace("Incoming device state payload via MQTT", subscription.topic, topic, payload);
 
-        try {
-            newState._updatedAt = this._parseDate(payload._updatedAt ?? Date.now()).getTime();
-        } catch (err) {
-            newState._updatedAt = Date.now();
-            this._logger.warn("Can't parse update date in state payload", err);
+        for (const key in payload) {
+            // Ignore this topic and try next when contains and notContains conditions aren't match for this payload key
+            if (!isIncluded(key, subscription.contains, subscription.notContains)) {
+                this._logger.trace(`Discard payload: Param ${key} is not included`);
+                return false;
+            }
         }
 
-        if (!this.incremental || isAfter(newState._updatedAt, this.lastUpdate)) {
-            this._update(newState, false);
+        const newState = pure(
+            // Only picked fields could be set in state. If subscription.pick is not defined, all fields are picked
+            this._mapState(Array.isArray(subscription.pick) ? pick(payload, subscription.pick) : payload),
+        );
+
+        if (!isEmptyObject(newState)) {
+            try {
+                newState._updatedAt = this._parseDate(payload._updatedAt ?? Date.now()).getTime();
+            } catch (err) {
+                newState._updatedAt = Date.now();
+                this._logger.warn("Can't parse update date in state payload", err);
+            }
+
+            if (!this.incremental || isAfter(newState._updatedAt, this.lastUpdate)) {
+                this._update(newState, false);
+            }
         }
+
+        return true;
     }
 
     private _setInternalState(newState: Partial<TState>, force = false): boolean {
@@ -220,13 +237,6 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     private _mapOutgoingMessages(payload: object): [string, unknown][] {
         const outgoing: Record<string, unknown> = {};
 
-        function isIncluded(name: string, includes?: string[], excludes?: string[]) {
-            const excluded = Array.isArray(excludes) && excludes.includes(name);
-            const included = !Array.isArray(includes) || includes.includes(name);
-
-            return !excluded && included;
-        }
-
         for (const key of Object.keys(payload)) {
             const publishers = this.publishers.filter((p) => !p.name || p.name === key);
 
@@ -234,7 +244,8 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
                 const params = { name: key, ...publisher, ...payload };
                 const topic = fill(publisher.topic, params);
 
-                if (isIncluded(params.name, params.include, params.exclude)) {
+                // Only picked fields. When params.pick is not set, all fields are picked
+                if (isIncluded(params.name, params.pick)) {
                     outgoing[topic] = this._reducePayload(publisher, params, outgoing[topic]);
                 }
             }

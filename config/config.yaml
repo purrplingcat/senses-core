@@ -26,6 +26,7 @@ device:
       publisher:
         - topic: modbus/gw0/kitchenlight0/+name/set
           format: number
+        - topic: modbus/gw0/kitchenlight0/set
       subscriber: 
         - topic: modbus/gw0/kitchenlight0/state
       poll:

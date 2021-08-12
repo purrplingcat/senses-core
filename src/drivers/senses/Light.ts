@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import ITurnableDevice from "../../devices/TurnableDevice";
 import BaseDevice, { DeviceState } from "../../devices/BaseDevice";
-import { hexToRgb, rgbToHex } from "../../core/utils";
+import { hexToRgb, isDefined, rgbToHex } from "../../core/utils";
 import { ISenses } from "../../core/Senses";
 
 const int = (num: number) => Math.trunc(num);
@@ -70,14 +70,16 @@ export default class Light extends BaseDevice<LigthState> implements ITurnableDe
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected _mapState(payload: any): Partial<LigthState> {
-        const snapshot = this.getState();
         const toUpdate: Partial<LigthState> = {
-            state: payload.state ?? BaseDevice.stateNumberToStr(payload.switch),
             brightness: payload.brightness,
-            effect: int(payload.effect ?? snapshot.effect),
+            effect: isDefined(payload.effect) ? int(payload.effect) : undefined,
         };
 
-        if (payload.r && payload.g && payload.b) {
+        if (isDefined(payload.state) || isDefined(payload.switch)) {
+            toUpdate.state = BaseDevice.stateNumberToStr(payload.state ?? payload.switch);
+        }
+
+        if (isDefined(payload.r) && isDefined(payload.g) && isDefined(payload.b)) {
             toUpdate.rgbColor = rgbToHex(int(payload.r), int(payload.g), int(payload.b));
         }
 
