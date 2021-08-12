@@ -92,9 +92,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         }
     }
 
-    private _reducePayload(publisher: TopicRoute, payload: any, current: any): unknown {
-        const name = payload.name || "";
-
+    private _reducePayload(name: string, publisher: TopicRoute, payload: any, current: any): unknown {
         if (!publisher.format) {
             if (typeof current !== "object") {
                 current = {};
@@ -124,8 +122,8 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     }
 
     private _parseMessage(message: string, topicParams: StringMap, subscription: TopicRoute): Payload {
-        const payload = { ...subscription, ...topicParams };
-        const name: string = payload.name || "";
+        const name: string = subscription.name || topicParams.name || "";
+        const payload = { ...topicParams };
 
         if (!subscription.format) {
             return Object.assign(payload, this._parseJson(message));
@@ -241,12 +239,12 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
             const publishers = this.publishers.filter((p) => !p.name || p.name === key);
 
             for (const publisher of publishers) {
-                const params = { name: key, ...publisher, ...payload };
-                const topic = fill(publisher.topic, params);
+                const name = publisher.name || key;
+                const topic = fill(publisher.topic, { ...payload, name });
 
                 // Only picked fields. When params.pick is not set, all fields are picked
-                if (isIncluded(params.name, params.pick)) {
-                    outgoing[topic] = this._reducePayload(publisher, params, outgoing[topic]);
+                if (isIncluded(name, publisher.pick)) {
+                    outgoing[topic] = this._reducePayload(name, publisher, payload, outgoing[topic]);
                 }
             }
         }
