@@ -3,7 +3,7 @@ import consola, { Consola } from "consola";
 import Entity, { UniqueIdentity } from "../core/Entity";
 import Handshake, { decodeDeviceType } from "../core/Handshake";
 import { ISenses } from "../core/Senses";
-import { asArray, toObject } from "../core/utils";
+import { asArray, getPropertyNames, toObject } from "../core/utils";
 import { extraAttrSymbol } from "./metadata";
 
 export interface DeviceInfo {
@@ -63,8 +63,10 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
     private _reflectExtraAttrs() {
         const attrs: Record<string, unknown> = {};
 
-        for (const key of Object.keys(this)) {
-            const isExtraAttr: boolean = Reflect.getMetadata(extraAttrSymbol, this, key);
+        console.log(this);
+
+        for (const key of getPropertyNames(this)) {
+            const isExtraAttr: boolean = Reflect.getMetadata(extraAttrSymbol, this, key) ?? false;
 
             if (isExtraAttr) {
                 attrs[key] = Reflect.get(this, key);
