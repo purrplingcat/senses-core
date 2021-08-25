@@ -1,6 +1,7 @@
 import Handshake from "../../core/Handshake";
 import { ISenses } from "../../core/Senses";
 import BaseDevice, { DeviceState } from "../../devices/BaseDevice";
+import { extraAttr } from "../../devices/metadata";
 import { Payload } from "../../types/senses";
 
 export interface SensorState extends DeviceState {
@@ -27,6 +28,7 @@ function getDefaults(fields: string[]) {
 }
 
 export default class Sensor extends BaseDevice<SensorState> {
+    @extraAttr
     fields: Record<string, Field>;
 
     constructor(senses: ISenses, fields: Record<string, Field>) {
@@ -42,10 +44,6 @@ export default class Sensor extends BaseDevice<SensorState> {
 
     setState(): boolean {
         return false;
-    }
-
-    getExtraAttrs(): Record<string, unknown> {
-        return { ...super.getExtraAttrs(), fields: this.fields };
     }
 
     updateFromShake(shake: Handshake): void {

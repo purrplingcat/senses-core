@@ -1,14 +1,21 @@
 import consola from "consola";
 import { differenceInMilliseconds, isAfter, isDate, parseISO } from "date-fns";
 import { equal } from "fast-shallow-equal";
-import { ISubscriptionGrant, MqttClient } from "mqtt";
+import { ISubscriptionGrant, MqttClient, QoS } from "mqtt";
 import { exec, matches, fill, clean } from "mqtt-pattern";
 import EventBus from "../core/EventBus";
 import Handshake from "../core/Handshake";
 import { ISenses } from "../core/Senses";
-import { isEmptyObject, isIncluded, omit, pick, pure } from "../core/utils";
+import { isEmptyObject, isIncluded, pick, pure } from "../core/utils";
 import { Payload, StringMap } from "../types/senses";
 import Device from "./Device";
+import { extraAttr } from "./metadata";
+
+type OutgoingMessage = {
+    topic: string;
+    payload: unknown;
+    qos?: QoS;
+};
 
 export type TopicRoute = {
     topic: string;
@@ -17,6 +24,7 @@ export type TopicRoute = {
     contains?: string[];
     notContains?: string[];
     pick?: string[];
+    qos?: QoS;
 };
 
 export interface DeviceState {
@@ -30,8 +38,11 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     polls: string[];
     optimistic: boolean;
     incremental: boolean;
+    @extraAttr
+    platform?: "rest" | "ws-events" | "zwave" | "zwavejs" | "modbus" | "zigbee" | "ip" | "modbus-tcp";
     update = (): boolean => this._update({}, false);
     private _state: Readonly<TState>;
+    protected _config: any;
 
     constructor(senses: ISenses, initialState: TState) {
         super(senses);
@@ -59,7 +70,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         return this._state;
     }
 
-    protected _publish<TPayload>(topic: string, payload: TPayload): Promise<void> {
+    protected _publish<TPayload>(topic: string, payload: TPayload, qos?: QoS): Promise<void> {
         return new Promise((resolve, reject) => {
             if (!this.mqtt?.connected) {
                 this._logger.error("Can't publish mqtt message: Mqtt connection is not established");
@@ -68,7 +79,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
 
             const message = typeof payload === "string" ? payload : JSON.stringify(payload);
             this._logger.debug(`Device ${this.uid} are publishing mqtt message on topic:`, topic);
-            this.mqtt.publish(topic, message, (err) => {
+            this.mqtt.publish(topic, message, { qos }, (err) => {
                 if (err) {
                     reject(err);
                 }
@@ -92,30 +103,27 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         }
     }
 
-    private _reducePayload(name: string, publisher: TopicRoute, payload: any, current: any): unknown {
+    private _formatPayload(publisher: TopicRoute, payload: any): unknown {
+        const name = publisher.name;
+        const value = name ? payload[name] : payload;
+
         if (!publisher.format) {
-            if (typeof current !== "object") {
-                current = {};
-            }
-
-            current[name] = payload[name];
-
-            return current;
+            return this._createPayload(value);
         }
 
         switch (publisher.format) {
             case "string":
-                return String(payload[name]);
+                return String(value);
             case "number":
-                return Number(payload[name]);
+                return Number(value);
             case "boolean":
-                return Boolean(payload[name]);
+                return Boolean(value);
             case "raw":
-                return payload[name];
+                return value;
             case "void":
                 return "";
             case "zwavejs":
-                return { value: payload[name] };
+                return { value };
             default:
                 this._logger.error(`Unknown payload format '${publisher.format}'`);
         }
@@ -172,11 +180,15 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     }
 
     public onMqttMessage(topic: string, message: string): void {
-        for (const subscriber of this.subscribers) {
-            // Pass next route when unmatched topic or unprocessed message
-            if (matches(subscriber.topic, topic) && this._processMessage(subscriber, topic, message)) {
-                return;
+        try {
+            for (const subscriber of this.subscribers) {
+                // Pass next route when unmatched topic or unprocessed message
+                if (matches(subscriber.topic, topic) && this._processMessage(subscriber, topic, message)) {
+                    return;
+                }
             }
+        } catch (err) {
+            this._logger.error(`${this.uid} failed during processing mqtt message:`, err);
         }
     }
 
@@ -232,41 +244,28 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     protected abstract _mapState(payload: Payload): Partial<TState>;
     protected abstract _createPayload(state: Partial<TState>): Payload;
 
-    private _mapOutgoingMessages(payload: Payload): [string, unknown][] {
-        const outgoing: Record<string, unknown> = {};
+    private *_mapOutgoingMessages(payload: Payload): Generator<OutgoingMessage> {
+        for (const publisher of this.publishers) {
+            const topic = fill(publisher.topic, { ...payload, _name: publisher.name });
 
-        for (const key of Object.keys(payload)) {
-            const publishers = this.publishers.filter((p) => !p.name || p.name === key);
-
-            for (const publisher of publishers) {
-                const name = publisher.name || key;
-                const topic = fill(publisher.topic, { ...payload, _name: name });
-                const assignedInTopic = Object.keys(exec(publisher.topic, topic) || {});
-
-                // Only picked fields. When params.pick is not set, all fields are picked
-                if (isIncluded(name, publisher.pick)) {
-                    outgoing[topic] = this._reducePayload(
-                        name,
-                        publisher,
-                        omit(payload, assignedInTopic),
-                        outgoing[topic],
-                    );
-                }
+            // Only picked fields. When params.pick is not set, all fields are picked
+            if (isIncluded(Object.keys(payload), publisher.contains, publisher.notContains)) {
+                yield { topic, payload: this._formatPayload(publisher, payload) };
             }
         }
-
-        return Object.entries(outgoing);
     }
 
     setState(state: Partial<TState>): boolean | Promise<boolean> {
-        const payload = pure(this._createPayload(state));
+        const payload = pure(state);
 
         if (typeof payload !== "object") {
             throw new Error(`${this.uid}: Invalid type '${typeof payload}' - Outgoing payload must be an object`);
         }
 
-        for (const [topic, message] of this._mapOutgoingMessages(payload)) {
-            this._publish(topic, message).catch((err) => this._logger.error(`${this.uid}:`, err));
+        for (const message of this._mapOutgoingMessages(payload)) {
+            this._publish(message.topic, message.payload, message.qos).catch((err) =>
+                this._logger.error(`${this.uid}:`, err),
+            );
         }
 
         if (this.optimistic) {
@@ -324,7 +323,13 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         this.subscribers = shake.comm?.filter((c) => c.type === "state") || [];
         this.publishers = shake.comm?.filter((c) => c.type === "set") || [];
         this.polls = shake.comm?.filter((c) => c.type === "fetch").map((c) => c.topic) || [];
-        this.incremental = Boolean((shake.additional as any).incremental ?? this.incremental);
+        this.incremental = Boolean(shake.additional?.incremental ?? this.incremental);
+        this.platform = shake.platform;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+    setupFromConfig(config: any): void {
+        this._config = config;
     }
 
     static stateNumberToStr(state: number): "on" | "off" | "unknown" {

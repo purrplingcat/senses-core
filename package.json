@@ -40,7 +40,11 @@
     "immer": "^9.0.5",
     "mqtt": "^4.2.6",
     "mqtt-pattern": "^1.2.0",
+    "nunjucks": "^3.2.3",
     "query": "protobi/query",
+    "reflect-metadata": "^0.1.13",
+    "safe-eval": "^0.4.1",
+    "safe-evaluate-expression": "^1.7.1",
     "uid-generator": "^2.0.0",
     "yaml": "^1.10.2",
     "yarn": "^1.22.10"

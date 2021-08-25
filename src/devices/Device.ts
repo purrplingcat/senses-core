@@ -1,8 +1,10 @@
+import "reflect-metadata";
 import consola, { Consola } from "consola";
 import Entity, { UniqueIdentity } from "../core/Entity";
 import Handshake, { decodeDeviceType } from "../core/Handshake";
 import { ISenses } from "../core/Senses";
 import { asArray, toObject } from "../core/utils";
+import { extraAttrSymbol } from "./metadata";
 
 export interface DeviceInfo {
     product?: string;
@@ -31,13 +33,11 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
     description?: string;
     attributes: Record<string, unknown>;
     readonly senses: ISenses;
-    protected _baseAttributes: Record<string, unknown>;
 
     constructor(senses: ISenses) {
         this.senses = senses;
         this.attributes = {};
         this.info = {};
-        this._baseAttributes = {};
     }
 
     abstract setState(state: Partial<TState>): Promise<boolean> | boolean;
@@ -50,21 +50,51 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
         return `${this.type}.${this.name}`;
     }
 
+    public get deviceId(): string {
+        const id = `${this.info.driver}-${this.info.vendor}-${this.info.product}-${this.info.model}`;
+
+        return id.toLowerCase().split(" ").join("");
+    }
+
     protected get _logger(): Consola {
         return consola.withScope(this.entityId);
+    }
+
+    private _reflectExtraAttrs() {
+        const attrs: Record<string, unknown> = {};
+
+        for (const key of Object.keys(this)) {
+            const isExtraAttr: boolean = Reflect.getMetadata(extraAttrSymbol, this, key);
+
+            if (isExtraAttr) {
+                attrs[key] = Reflect.get(this, key);
+            }
+        }
+
+        return attrs;
     }
 
     public getExtraAttrs(): Record<string, unknown> {
         return {
             ...this.info,
-            ...this._baseAttributes,
             ...this.attributes,
+            ...this._reflectExtraAttrs(),
             _constructor: this.constructor.name,
         };
     }
 
     public updateFromShake(shake: Handshake): void {
         const type = decodeDeviceType(shake.type);
+
+        if (type.type != this.type || type.kind != "device") {
+            this._logger.warn(
+                `Can't update device ${this.uid}: Type or kind mismatch. To fix this try restart the Senses process.`,
+                {
+                    current: `device/${this.type}${this.class ? `, ${this.class}` : ""}`,
+                    changed: type.fullQualifiedType,
+                },
+            );
+        }
 
         this.uid = shake.uid;
         this.name = shake.alias || shake.uid;

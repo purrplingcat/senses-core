@@ -1,7 +1,20 @@
 import { YAMLSeq, YAMLMap } from "yaml/types";
 
-export function pure<T extends Record<string | number | symbol, unknown>>(obj: T): T {
-    Object.keys(obj).forEach((key) => (obj[key] === undefined ? delete obj[key] : {}));
+export type PureOptions = {
+    nulls?: boolean;
+    underscores?: boolean;
+};
+
+export function pure<T extends Record<string | number | symbol, unknown>>(obj: T, opts?: PureOptions): T {
+    for (const key of Object.keys(obj)) {
+        const isUndefined = obj[key] === undefined;
+        const isNull = opts?.nulls && obj[key] === null;
+        const isUnderscore = opts?.underscores && key.startsWith("_");
+
+        if (isUndefined || isNull || isUnderscore) {
+            delete obj[key];
+        }
+    }
 
     return obj;
 }
@@ -50,15 +63,41 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
         : null;
 }
 
-export function isIncluded(name: string, includes?: string[], excludes?: string[]): boolean {
+export function isIncluded(name: string | string[], includes?: string[], excludes?: string[]): boolean {
+    if (Array.isArray(name)) {
+        for (const n of name) {
+            if (!isIncluded(n, includes, excludes)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     const included = !Array.isArray(includes) || !includes.length || includes.includes(name);
     const excluded = Array.isArray(excludes) && excludes.length && excludes.includes(name);
 
     return !excluded && included;
 }
 
-export function isDefined(val: unknown): boolean {
-    return val !== undefined;
+export function isDefined(...val: unknown[]): boolean {
+    for (const v of val) {
+        if (v === undefined) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+export function anyIsDefined(...val: unknown[]): boolean {
+    for (const v of val) {
+        if (v !== undefined) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 export function pick<T extends object, K extends keyof T>(obj: T, toPick: K[]): Pick<T, K> {

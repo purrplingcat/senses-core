@@ -87,6 +87,7 @@ function setupDeviceFromConfig(senses: ISenses, platform: string, config: YAMLMa
         location: config.get("room"),
         description: config.get("description"),
         stateFormat: config.get("format") || "json",
+        platform: config.get("platform"),
         tags: asArray<string>(config.get("tags")),
         groups: config.get("groups"),
         comm: [
@@ -100,6 +101,7 @@ function setupDeviceFromConfig(senses: ISenses, platform: string, config: YAMLMa
             fields: config.get("fields")?.toJSON(),
             mainField: config.get("mainField"),
             incremental: config.get("incremental"),
+            schema: config.get("schema") || "",
         },
     };
 

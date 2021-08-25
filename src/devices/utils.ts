@@ -8,6 +8,10 @@ import Device from "./Device";
 export function registerNewDevice(senses: ISenses, shake: Handshake, type: DeviceType): BaseDevice {
     const device = createDevice(senses, senses.drivers, shake, type);
 
+    if (!device) {
+        throw new Error("Device factory returns null or undefined");
+    }
+
     updateDeviceInfo(device, shake);
     senses.eventbus.on("mqtt.message", device.onMqttMessage.bind(device));
     senses.eventbus.on("mqtt.connect", (mqtt) => {

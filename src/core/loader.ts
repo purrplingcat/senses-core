@@ -75,7 +75,7 @@ export async function loadComponent(path: string, senses: ISenses, config: Docum
         throw new Error(`Component on path ${path} has invalid name.`);
     }
 
-    await resolveDependencies(component.name, component.dependencies || [], senses.eventbus);
+    // await resolveDependencies(component.name, component.dependencies || [], senses.eventbus);
 
     if (config.has(component.name) && component.setup) {
         // Setup component
