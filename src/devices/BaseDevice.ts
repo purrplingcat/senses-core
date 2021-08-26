@@ -318,7 +318,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         });
     }
 
-    updateFromShake(shake: Handshake): void {
+    override updateFromShake(shake: Handshake): void {
         super.updateFromShake(shake);
         this.subscribers = shake.comm?.filter((c) => c.type === "state") || [];
         this.publishers = shake.comm?.filter((c) => c.type === "set") || [];

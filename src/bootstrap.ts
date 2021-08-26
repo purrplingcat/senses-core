@@ -2,8 +2,8 @@ import consola from "consola";
 import fs from "fs";
 import mqtt from "mqtt";
 import yaml from "yaml";
-import { Senses } from "./core/Senses";
-import { loadComponents } from "./core/loader";
+import { Senses } from "~core/Senses";
+import { loadComponents } from "~core/loader";
 
 const components = ["http", "devices", "room", "exposed", "watcher"].map((c) => __dirname + "/" + c);
 

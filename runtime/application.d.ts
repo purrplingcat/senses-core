@@ -9,6 +9,7 @@ declare namespace NodeApplication {
         runner: string;
         runnerVersion: string;
         entry: string;
+        rootDir: string;
     }
 
     export interface AppManifest {

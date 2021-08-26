@@ -1,5 +1,5 @@
 import consola, { LogLevel } from "consola";
-import { setupSenses } from "./bootstrap";
+import { setupSenses } from "~bootstrap";
 
 export function errorHandler(err: Error): void {
     consola.fatal(err);

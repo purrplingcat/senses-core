@@ -36,7 +36,7 @@ class EventBus extends EventEmitter {
         this.senses = senses;
     }
 
-    emit(event: string, ...args: any[]): boolean {
+    override emit(event: string, ...args: any[]): boolean {
         consolaGlobalInstance.withScope("eventbus").trace(`Emitting event ${event}`);
         return super.emit(event, ...args);
     }

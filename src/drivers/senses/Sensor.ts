@@ -42,11 +42,11 @@ export default class Sensor extends BaseDevice<SensorState> {
         this.type = "sensor";
     }
 
-    setState(): boolean {
+    override setState(): boolean {
         return false;
     }
 
-    updateFromShake(shake: Handshake): void {
+    override updateFromShake(shake: Handshake): void {
         super.updateFromShake(shake);
 
         this.fields = (shake.additional?.fields || {}) as Record<PropertyKey, Field>;

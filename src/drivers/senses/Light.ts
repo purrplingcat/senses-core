@@ -26,8 +26,8 @@ export enum LightFeatures {
 }
 
 export default class Light extends BaseDevice<LigthState> implements ITurnableDevice {
-    type = "light";
-    features: LightFeatures[] = [];
+    override type = "light";
+    override features: LightFeatures[] = [];
     @extraAttr
     effects: Record<number | string, string>;
 
