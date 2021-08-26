@@ -1,6 +1,7 @@
 import consola from "consola";
 import { Application } from "express";
 import { MqttClient } from "mqtt";
+import SceneController, { ISceneController } from "~scene/SceneController";
 import Device from "../devices/Device";
 import { IGroup } from "../devices/Group";
 import { IRoom } from "../devices/Room";
@@ -23,6 +24,7 @@ export interface ISenses {
     services: IService[];
     rooms: IRoom[];
     groups: IGroup[];
+    scenes: ISceneController;
     domain: string;
     name: string;
     states: IStateMachine;
@@ -48,6 +50,7 @@ export class Senses implements ISenses {
     rooms: IRoom[];
     groups: IGroup[];
     components: Component[];
+    scenes: ISceneController;
     domain: string;
     name: string;
     startAt: number;
@@ -69,6 +72,7 @@ export class Senses implements ISenses {
         this.name = name;
         this.debug = debug;
         this.drivers = { ...drivers };
+        this.scenes = new SceneController(this);
     }
 
     addService(service: IService): void {

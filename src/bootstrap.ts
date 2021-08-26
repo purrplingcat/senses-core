@@ -1,16 +1,36 @@
 import consola from "consola";
 import fs from "fs";
-import mqtt from "mqtt";
+import mqtt, { IClientOptions } from "mqtt";
 import yaml from "yaml";
 import { Senses } from "~core/Senses";
 import { loadComponents } from "~core/loader";
 
-const components = ["http", "devices", "room", "exposed", "watcher"].map((c) => __dirname + "/" + c);
+const components = ["http", "devices", "room", "exposed", "scene", "watcher"].map((c) => __dirname + "/" + c);
 
-function createMqttClient(brokerUrl: string) {
+type ISecureClientOptions = {
+    caFile?: string;
+    keyFile?: string;
+    certFile?: string;
+};
+
+function createMqttClient(brokerUrl: string, options?: IClientOptions & ISecureClientOptions) {
     consola.info("Connecting to mqtt broker ...");
-    const mqttClient = mqtt.connect(brokerUrl);
 
+    if (options?.caFile) {
+        options.ca = fs.readFileSync(options.caFile);
+    }
+
+    if (options?.keyFile) {
+        options.key = fs.readFileSync(options.keyFile);
+    }
+
+    if (options?.certFile) {
+        options.cert = fs.readFileSync(options.certFile);
+    }
+
+    console.log(options);
+
+    const mqttClient = mqtt.connect(brokerUrl, options);
     mqttClient.on("connect", () => {
         mqttClient.publish("senses/presence", "online");
         consola.success("MQTT connection established");
@@ -26,7 +46,7 @@ export async function setupSenses(configFile: string, debug: boolean): Promise<S
     const config = yaml.parseDocument(fs.readFileSync(configFile).toString());
     const domain = config.get("domain") || process.env.HOSTNAME || "localhost";
     const name = config.get("name") || process.env.SENSES_NAME || "Senses Home";
-    const mqtt = createMqttClient(config.getIn(["mqtt", "brokerUrl"]));
+    const mqtt = createMqttClient(config.getIn(["mqtt", "brokerUrl"]), config.getIn(["mqtt", "options"])?.toJSON());
     const senses = new Senses(mqtt, domain, name, debug);
 
     await loadComponents(components, senses, config);

@@ -102,5 +102,6 @@ export default function createQueryResolvers(senses: ISenses): Record<string, (p
                 polls: device.polls,
             };
         },
+        scenes: () => senses.scenes.scenes,
     };
 }

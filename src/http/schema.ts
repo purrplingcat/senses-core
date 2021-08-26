@@ -57,6 +57,14 @@ export default gql`
         type: String!
     }
 
+    type Scene {
+        uid: String!
+        name: String!
+        room: String
+        icon: String
+        title: String
+    }
+
     type TopicProvider {
         topic: String
         name: String
@@ -75,6 +83,7 @@ export default gql`
         rooms(filter: JSON): [Room]
         room(name: String!): Room!
         topics(deviceUid: ID!): Topics!
+        scenes: [Scene]
     }
 
     type Mutation {

@@ -4,7 +4,12 @@ http:
   port: 8080
 
 mqtt:
-  brokerUrl: mqtt://127.0.0.1
+  brokerUrl: mqtts://127.0.0.1
+  options:
+    caFile: certs/ca.cert
+    certFile: certs/client.cert
+    keyFile: certs/client.key
+    rejectUnauthorized: false
 
 expose:
   enabled: yes
@@ -62,17 +67,14 @@ room:
   - name: bedroom
     title: Ložnice
     icon: rooms/bedroom
-  - name: relaxroom
-    title: Relaxační místnost
+  - name: sanctuary
+    title: Klidová místnost
     icon: rooms/livingroom
   
 scene:
   - name: night
     title: Noc
     icon: img/nightmoon
-    entities:
-      light.kitchen_light:
-        brightness: 10
-        switch: 0
   - name: kitchen_night
     title: Noc
+    room: kitchen
