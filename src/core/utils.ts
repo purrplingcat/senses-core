@@ -123,13 +123,3 @@ export function omit<T extends object, K extends keyof T>(obj: T, toOmit: K[]): 
 
     return omited as Omit<T, K>;
 }
-
-export function getPropertyNames(o: unknown): string[] {
-    const props = [];
-    let obj = o;
-    do {
-        props.push(...Object.getOwnPropertyNames(obj));
-    } while ((obj = Object.getPrototypeOf(obj)));
-
-    return Array.from(new Set(props)).sort();
-}
