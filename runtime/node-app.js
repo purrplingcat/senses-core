@@ -27,6 +27,10 @@ function execute(app) {
 }
 
 function runner(manifest, entry = null) {
+    if (global.application.instance) {
+        throw new Error("An application is already running");
+    }
+
     if (typeof manifest !== "object") {
         throw new Error("Invalid application manifest");
     }
@@ -34,6 +38,7 @@ function runner(manifest, entry = null) {
     const root = manifest.root || "";
     const _entry = entry || manifest.entry || manifest.main || "app.js";
     moduleResolve.addAlias("~", root || nodePath.dirname(_entry));
+    moduleResolve.addAlias("@runtime", __dirname);
     moduleResolve.addAliases(manifest.resolve || {});
 
     const app = loadAssembly(nodePath.join(root, _entry));
