@@ -123,3 +123,17 @@ export function omit<T extends object, K extends keyof T>(obj: T, toOmit: K[]): 
 
     return omited as Omit<T, K>;
 }
+
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export function getIn<T>(o: any, path: string[], cast?: (raw: any) => T): T | undefined | null {
+    let current = o;
+    let key;
+
+    while ((key = path.shift())) {
+        current = current[key];
+
+        if (current == null) break;
+    }
+
+    return cast ? cast(current) : current;
+}

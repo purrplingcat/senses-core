@@ -29,7 +29,7 @@ function setupScene(senses: ISenses, config: YAMLMap): IScene {
     return {
         available: true,
         name: config.get("name"),
-        topic: config.get("topic") || `${senses.domain}/${room ? room + "/" : ""}scene`,
+        topic: config.get("topic") || `${senses.domain}/$senses/scene${room ? "/" + room : ""}`,
         type: "scene",
         uid: config.get("uid") || `scene-${room ? room + "-" : ""}${config.get("name")}`,
         icon: config.get("icon"),

@@ -22,6 +22,7 @@ export default class SceneController implements ISceneController {
             throw new Error(`Unknown scene '${sceneName}'`);
         }
 
+        this._senses.eventbus.emit("scene.activate", scene);
         this._senses.mqtt.publish(scene.topic, scene.name);
     }
 }

@@ -7,19 +7,17 @@ import { YAMLMap } from "yaml/types";
 export const name = "expose";
 export const domain = name;
 
-export function setup(senses: ISenses, config: YAMLMap): void {
-    const scope = config.get("scope") || "senses";
-
+export function setup(senses: ISenses): void {
     senses.eventbus.on("mqtt.connect", (mqtt) => {
         if (senses.mqtt == null) return;
 
-        mqtt.subscribe(`${senses.domain}/${scope}/device/+/+/set`);
-        mqtt.subscribe(`${senses.domain}/${scope}/service/+/call`);
+        mqtt.subscribe(`${senses.domain}/$senses/device/+/+/set`);
+        mqtt.subscribe(`${senses.domain}/$senses/service/+/call`);
     });
 
     senses.eventbus.on("mqtt.message", (topic, message) => {
-        if (topic.startsWith(`${senses.domain}/${scope}/device/`)) handleDevice(topic, message);
-        if (topic.startsWith(`${senses.domain}/${scope}/service/`)) handleService(topic, message);
+        if (topic.startsWith(`${senses.domain}/$senses/device/`)) handleDevice(topic, message);
+        if (topic.startsWith(`${senses.domain}/$senses/service/`)) handleService(topic, message);
     });
 
     senses.eventbus.on("device.state_update", (device: Device) => {
@@ -27,7 +25,7 @@ export function setup(senses: ISenses, config: YAMLMap): void {
             const room = device.room || "-";
 
             senses.mqtt.publish(
-                `${senses.domain}/${scope}/device/${room}/${device.name}`,
+                `${senses.domain}/$senses/device/${room}/${device.name}`,
                 JSON.stringify(device.getState()),
             );
         }
