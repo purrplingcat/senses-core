@@ -28,8 +28,6 @@ function createMqttClient(brokerUrl: string, options?: IClientOptions & ISecureC
         options.cert = fs.readFileSync(options.certFile);
     }
 
-    console.log(options);
-
     const mqttClient = mqtt.connect(brokerUrl, options);
     mqttClient.on("connect", () => {
         mqttClient.publish("senses/presence", "online");

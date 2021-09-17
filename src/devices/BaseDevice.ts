@@ -6,7 +6,7 @@ import { exec, matches, fill, clean } from "mqtt-pattern";
 import EventBus from "../core/EventBus";
 import Handshake from "../core/Handshake";
 import { ISenses } from "../core/Senses";
-import { isEmptyObject, isIncluded, pick, pure } from "../core/utils";
+import { isDefined, isEmptyObject, isIncluded, pick, pure } from "../core/utils";
 import { Payload, StringMap } from "../types/senses";
 import Device from "./Device";
 import { extraAttr } from "./metadata";
@@ -103,15 +103,8 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         }
     }
 
-    private _formatPayload(publisher: TopicRoute, payload: any): unknown {
-        const name = publisher.name;
-        const value = name ? payload[name] : payload;
-
-        if (!publisher.format) {
-            return this._createPayload(value);
-        }
-
-        switch (publisher.format) {
+    private _formatValue(value: unknown, format: string): unknown {
+        switch (format) {
             case "string":
                 return String(value);
             case "number":
@@ -125,13 +118,26 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
             case "zwavejs":
                 return { value };
             default:
-                this._logger.error(`Unknown payload format '${publisher.format}'`);
+                this._logger.error(`Unknown payload format '${format}'`);
         }
+    }
+
+    private _formatPayload(publisher: TopicRoute, payload: Payload): unknown {
+        const name = publisher.name;
+        const value = name ? payload[name] : payload;
+
+        if (!isDefined(value)) return;
+
+        if (!publisher.format) {
+            return this._createPayload(value);
+        }
+
+        return this._formatValue(value, publisher.format);
     }
 
     private _parseMessage(message: string, topicParams: StringMap, subscription: TopicRoute): Payload {
         const name: string = subscription.name || topicParams._name || "";
-        const payload = { ...topicParams };
+        const payload: Payload = { ...topicParams, _name: name };
 
         if (!subscription.format) {
             return Object.assign(payload, this._parseJson(message));
@@ -246,12 +252,22 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
 
     private *_mapOutgoingMessages(payload: Payload): Generator<OutgoingMessage> {
         for (const publisher of this.publishers) {
+            if (!publisher.topic) {
+                this._logger.error("Publisher topic is not set", publisher);
+                continue;
+            }
+
             const topic = fill(publisher.topic, { ...payload, _name: publisher.name });
 
-            // Only picked fields. When params.pick is not set, all fields are picked
-            if (isIncluded(Object.keys(payload), publisher.contains, publisher.notContains)) {
-                yield { topic, payload: this._formatPayload(publisher, payload) };
+            if (!isIncluded(Object.keys(payload), publisher.contains, publisher.notContains)) {
+                continue;
             }
+
+            yield {
+                topic,
+                payload: this._formatPayload(publisher, payload),
+                qos: publisher.qos,
+            };
         }
     }
 
@@ -263,6 +279,8 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         }
 
         for (const message of this._mapOutgoingMessages(payload)) {
+            if (!message.topic || !isDefined(message.payload)) continue;
+
             this._publish(message.topic, message.payload, message.qos).catch((err) =>
                 this._logger.error(`${this.uid}:`, err),
             );

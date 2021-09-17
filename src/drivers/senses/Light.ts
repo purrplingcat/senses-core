@@ -5,6 +5,7 @@ import BaseDevice, { DeviceState } from "../../devices/BaseDevice";
 import { hexToRgb, isDefined, rgbToHex } from "../../core/utils";
 import { ISenses } from "../../core/Senses";
 import { extraAttr } from "../../devices/metadata";
+import { Payload } from "~types/senses";
 
 const int = (num: number) => Math.trunc(num);
 
@@ -77,8 +78,7 @@ export default class Light extends BaseDevice<LigthState> implements ITurnableDe
         return this.setState({ state: "off" });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected _mapState(payload: any): Partial<LigthState> {
+    protected _mapState(payload: Payload): Partial<LigthState> {
         const supports = (feature: LightFeatures) => this.features.includes(feature);
         const toUpdate: Partial<LigthState> = {
             brightness: payload.brightness,

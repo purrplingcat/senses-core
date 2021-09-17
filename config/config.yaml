@@ -4,12 +4,13 @@ http:
   port: 8080
 
 mqtt:
-  brokerUrl: mqtts://127.0.0.1
-  options:
-    caFile: certs/ca.cert
-    certFile: certs/client.cert
-    keyFile: certs/client.key
-    rejectUnauthorized: false
+  brokerUrl: mqtt://127.0.0.1
+  #brokerUrl: mqtts://127.0.0.1
+  #options:
+  #  caFile: certs/ca.cert
+  #  certFile: certs/client.cert
+  #  keyFile: certs/client.key
+  #  rejectUnauthorized: false
 
 expose:
   enabled: yes
@@ -29,7 +30,8 @@ device:
       class: light
       room: kitchen
       publisher:
-        - topic: modbus/gw0/kitchenlight0/+_name/set
+        - name: state
+          topic: modbus/gw0/kitchenlight0/+_name/set
           format: number
         - topic: modbus/gw0/kitchenlight0/set
       subscriber: 
@@ -41,6 +43,8 @@ device:
         - topic: modbus/gw0/kitchenlight0/presence
           payload_available: online
           payload_unavailable: offline
+    
+    # Teplota
     - name: temperature
       title: Teplota v místnosti
       class: temperature
@@ -56,6 +60,17 @@ device:
           type: temperature
       tags:
         - main
+
+    # Roomba
+    - name: roomba
+      title: Roomba
+      type: vacuum
+      subscriber: 
+        - topic: home/roomba/mission
+      publisher:
+        - name: command
+          topic: home/roomba/command/+command
+          format: void
 
 room:
   - name: kitchen
