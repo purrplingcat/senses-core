@@ -11,6 +11,7 @@ export function setup(senses: ISenses): void {
     senses.eventbus.on("mqtt.connect", (mqtt) => {
         if (senses.mqtt == null) return;
 
+        mqtt.subscribe(`${senses.domain}/$senses/device/+/set`);
         mqtt.subscribe(`${senses.domain}/$senses/device/+/+/set`);
         mqtt.subscribe(`${senses.domain}/$senses/service/+/call`);
     });
@@ -21,27 +22,17 @@ export function setup(senses: ISenses): void {
     });
 
     senses.eventbus.on("device.state_update", (device: Device) => {
-        if (senses.mqtt?.connected) {
-            const room = device.room || "-";
-
-            senses.mqtt.publish(
-                `${senses.domain}/$senses/device/${room}/${device.name}`,
-                JSON.stringify(device.getState()),
-            );
-        }
+        senses.mqtt.publish(`${senses.domain}/$senses/device/${device.uid}`, JSON.stringify(device.getState()));
     });
 
     function handleDevice(topic: string, message: string) {
-        const devParams = MQTTPattern.exec(`device/${senses.domain}/+room/+device/set`, topic);
+        const devParams = MQTTPattern.exec(`${senses.domain}/$senses/device/+uid/set`, topic);
 
         if (devParams) {
-            const deviceName = devParams.name;
-            const deviceRoom = devParams.room === "none" ? null : devParams.room;
+            const uid = devParams.uid;
 
             try {
-                senses.devices
-                    .filter((d) => d.room === deviceRoom && d.name === deviceName)
-                    .forEach((d) => d.setState(JSON.parse(message)));
+                senses.devices.filter((d) => d.uid === uid).forEach((d) => d.setState(JSON.parse(message)));
             } catch (err) {
                 consola.withScope(domain).error(err);
             }
@@ -54,7 +45,7 @@ export function setup(senses: ISenses): void {
         if (svcParams) {
             try {
                 await senses.callService(svcParams.service, JSON.parse(message));
-            } catch (err) {
+            } catch (err: any) {
                 senses.mqtt?.publish(`service/${senses.domain}/${svcParams.name}/error`, err.message);
             }
         }

@@ -25,6 +25,7 @@ export type TopicRoute = {
     notContains?: string[];
     pick?: string[];
     qos?: QoS;
+    template?: string;
 };
 
 export interface DeviceState {
@@ -98,13 +99,26 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
         try {
             return JSON.parse(message);
         } catch (err) {
-            this._logger.warn("Can't parse JSON payload:", err);
+            this._logger.warn("Can't parse JSON payload:", err, message);
             return {};
         }
     }
 
-    private _formatValue(value: unknown, format: string): unknown {
-        switch (format) {
+    private _formatValue(value: unknown, publisher: TopicRoute, context: Payload): unknown {
+        const renderTemplateValue = () => {
+            if (!publisher.template) {
+                this._logger.warn("No template specified", publisher);
+                return "";
+            }
+
+            return this.senses.renderer.render(publisher.template, {
+                value,
+                context,
+                device: this,
+            });
+        };
+
+        switch (publisher.format) {
             case "string":
                 return String(value);
             case "number":
@@ -115,10 +129,14 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
                 return value;
             case "void":
                 return "";
+            case "template":
+                return renderTemplateValue();
+            case "template-json":
+                return this._parseJson(renderTemplateValue());
             case "zwavejs":
                 return { value };
             default:
-                this._logger.error(`Unknown payload format '${format}'`);
+                this._logger.error(`Unknown payload format '${publisher.format}'`);
         }
     }
 
@@ -132,7 +150,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
             return this._createPayload(value);
         }
 
-        return this._formatValue(value, publisher.format);
+        return this._formatValue(value, publisher, payload);
     }
 
     private _parseMessage(message: string, topicParams: StringMap, subscription: TopicRoute): Payload {
@@ -154,6 +172,12 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
                 break;
             case "boolean":
                 Reflect.set(payload, name, Boolean(message));
+                break;
+            case "object":
+                Reflect.set(payload, name, { ...this._parseJson(message) });
+                break;
+            case "list":
+                Reflect.set(payload, name, Array.from(this._parseJson(message)));
                 break;
             case "raw":
                 Reflect.set(payload, name, message);

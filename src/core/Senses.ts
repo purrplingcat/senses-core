@@ -13,6 +13,7 @@ import Handshake from "./Handshake";
 import { Component } from "./loader";
 import IService from "./Service";
 import StateMachine, { IStateMachine } from "./StateMachine";
+import { IRenderer, Renderer } from "./template";
 
 export interface ISenses {
     components: Component[];
@@ -28,6 +29,7 @@ export interface ISenses {
     domain: string;
     name: string;
     states: IStateMachine;
+    renderer: IRenderer;
     hasDevice(uidOrEntityId: string): boolean;
     fetchDevice(uidOrEntityId: string): Device;
     addDevice(device: Device): void;
@@ -54,6 +56,7 @@ export class Senses implements ISenses {
     domain: string;
     name: string;
     startAt: number;
+    renderer: IRenderer;
     private _uid: string;
     private _discovery?: Discovery;
 
@@ -73,6 +76,7 @@ export class Senses implements ISenses {
         this.debug = debug;
         this.drivers = { ...drivers };
         this.scenes = new SceneController(this);
+        this.renderer = new Renderer(this);
     }
 
     addService(service: IService): void {

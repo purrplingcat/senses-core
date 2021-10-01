@@ -9,6 +9,7 @@ export enum MissionStatus {
     paused = "paused",
     cleaning = "cleaning",
     returning = "returning",
+    training = "training",
     error = "error",
     unknown = "unknown",
 }
@@ -20,6 +21,9 @@ export interface RoombaState extends DeviceState {
     error: number;
     errorMessage: string | null;
     cleaningTime: number;
+    ready: boolean;
+    zone: string | null;
+    zones: { name: string; title: string; type: string }[];
 }
 
 export interface RoombaCommands {
@@ -35,7 +39,7 @@ export default class Roomba extends BaseDevice<RoombaState> implements ITurnable
             return "off";
         }
 
-        if ([MissionStatus.cleaning, MissionStatus.returning].includes(missionStatus)) {
+        if ([MissionStatus.cleaning, MissionStatus.returning, MissionStatus.training].includes(missionStatus)) {
             return "on";
         }
 
@@ -52,6 +56,9 @@ export default class Roomba extends BaseDevice<RoombaState> implements ITurnable
             cleaningTime: 0,
             error: 0,
             errorMessage: null,
+            ready: false,
+            zone: null,
+            zones: [],
         });
 
         this.type = "vacuum";
@@ -88,6 +95,8 @@ export default class Roomba extends BaseDevice<RoombaState> implements ITurnable
             cleaningTime: payload.cleaningTime,
             error: payload.error,
             errorMessage: payload.errorMessage,
+            ready: payload.ready,
+            zones: payload.zones,
         };
     }
 

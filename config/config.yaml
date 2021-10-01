@@ -65,12 +65,20 @@ device:
     - name: roomba
       title: Roomba
       type: vacuum
-      subscriber: 
+      subscriber:
+        - name: zones
+          topic: home/roomba/zones
+          format: list
         - topic: home/roomba/mission
       publisher:
         - name: command
           topic: home/roomba/command/+command
           format: void
+        - name: zone
+          topic: home/roomba/command/clean
+          format: template-json
+          template: '{"zone": "{{ value }}"}'
+        
 
 room:
   - name: kitchen
