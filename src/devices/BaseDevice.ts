@@ -6,7 +6,7 @@ import { exec, matches, fill, clean } from "mqtt-pattern";
 import EventBus from "../core/EventBus";
 import Handshake from "../core/Handshake";
 import { ISenses } from "../core/Senses";
-import { isDefined, isEmptyObject, isIncluded, pick, pure } from "../core/utils";
+import { isDefined, isEmptyObject, isIncluded, parseBoolean, pick, pure } from "../core/utils";
 import { Payload, StringMap } from "../types/senses";
 import Device from "./Device";
 import { extraAttr } from "./metadata";
@@ -171,13 +171,16 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
                 Reflect.set(payload, name, Number(message));
                 break;
             case "boolean":
-                Reflect.set(payload, name, Boolean(message));
+                Reflect.set(payload, name, parseBoolean(message));
                 break;
             case "object":
                 Reflect.set(payload, name, { ...this._parseJson(message) });
                 break;
             case "list":
                 Reflect.set(payload, name, Array.from(this._parseJson(message)));
+                break;
+            case "json-string":
+                Reflect.set(payload, name, String(this._parseJson(message)));
                 break;
             case "raw":
                 Reflect.set(payload, name, message);

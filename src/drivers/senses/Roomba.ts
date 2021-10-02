@@ -21,9 +21,11 @@ export interface RoombaState extends DeviceState {
     error: number;
     errorMessage: string | null;
     cleaningTime: number;
+    expireTime: number;
     ready: boolean;
     zone: string | null;
     zones: { name: string; title: string; type: string }[];
+    label: string;
 }
 
 export interface RoombaCommands {
@@ -54,11 +56,13 @@ export default class Roomba extends BaseDevice<RoombaState> implements ITurnable
             battery: 0,
             bin: "unknown",
             cleaningTime: 0,
+            expireTime: 0,
             error: 0,
             errorMessage: null,
             ready: false,
             zone: null,
             zones: [],
+            label: "",
         });
 
         this.type = "vacuum";
@@ -93,10 +97,12 @@ export default class Roomba extends BaseDevice<RoombaState> implements ITurnable
             battery: payload.battery,
             bin: payload.bin,
             cleaningTime: payload.cleaningTime,
+            expireTime: payload.expireTime,
             error: payload.error,
             errorMessage: payload.errorMessage,
             ready: payload.ready,
             zones: payload.zones,
+            label: payload.label,
         };
     }
 

@@ -137,3 +137,22 @@ export function getIn<T>(o: any, path: string[], cast?: (raw: any) => T): T | un
 
     return cast ? cast(current) : current;
 }
+
+export function parseBoolean(value: unknown): boolean {
+    if (typeof value === "boolean") {
+        return value;
+    }
+
+    const num = Number(value);
+    if (!Number.isNaN(num)) {
+        return num !== 0;
+    }
+    if (["true", "yes"].includes(value as string)) {
+        return true;
+    }
+    if (["false", "no"].includes(value as string)) {
+        return false;
+    }
+
+    throw new Error(`Invalid boolean value: `);
+}

@@ -64,8 +64,12 @@ device:
     # Roomba
     - name: roomba
       title: Roomba
+      description: Robotický vysavač
       type: vacuum
       subscriber:
+        - name: label
+          topic: home/roomba/state/name
+          format: json-string
         - name: zones
           topic: home/roomba/zones
           format: list
