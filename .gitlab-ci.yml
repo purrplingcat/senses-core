@@ -36,5 +36,4 @@ uploaddist:
 #  only:
 #  - master
   script:
-  - tar cvpf ${CI_COMMIT_SHORT_SHA}.tar dist/*
-  - minc cp ${CI_COMMIT_SHORT_SHA}.tar iots3/homeiot/artifacts/senses-core.tar
+  - minc cp dist/senses.sqfs iots3/homeiot/artifacts/senses.sqfs
