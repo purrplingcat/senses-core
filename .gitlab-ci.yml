@@ -24,7 +24,7 @@ build:
   script:
   - minc cp iots3/homeiot/artifacts/senses.tar senses.tar
   - tar xvpf senses.tar
-  - mv dist/* .
+  - mv dist www
   - yarn build:dist
   artifacts:
     paths:
