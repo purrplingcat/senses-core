@@ -1,0 +1,40 @@
+stages:
+- build-and-test
+- combine
+- upload
+
+buildjs:
+  stage: build-and-test
+  script:
+  - yarn
+  - yarn build
+  artifacts:
+    paths:
+    - lib/*
+    expire_in: 1 week
+
+testjs:
+  stage: build-and-test
+  script:
+  - yarn
+  - yarn lint
+
+build:
+  stage: combine
+  script:
+  - minc cp iots3/homeiot/artifacts/senses.tar senses.tar
+  - tar xvpf senses.tar
+  - mv dist/* .
+  - yarn build:dist
+  artifacts:
+    paths:
+    - dist/senses.sqfs
+    expire_in: 1 week
+
+uploaddist:
+  stage: upload
+#  only:
+#  - master
+  script:
+  - tar cvpf ${CI_COMMIT_SHORT_SHA}.tar dist/*
+  - minc cp ${CI_COMMIT_SHORT_SHA}.tar iots3/homeiot/artifacts/senses-core.tar
