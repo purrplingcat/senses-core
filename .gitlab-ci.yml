@@ -21,6 +21,8 @@ testjs:
 
 build:
   stage: combine
+  tags:
+    - senses
   script:
   - minc cp iots3/homeiot/artifacts/senses.tar senses.tar
   - tar xvpf senses.tar
@@ -33,7 +35,7 @@ build:
 
 uploaddist:
   stage: upload
-#  only:
-#  - master
+  only:
+  - master
   script:
   - minc cp dist/senses.sqfs iots3/homeiot/artifacts/senses.sqfs
