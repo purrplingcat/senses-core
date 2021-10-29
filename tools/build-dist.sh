@@ -3,7 +3,9 @@ set -eu
 echo "Building Senses app distribution ..."
 rm -rf .build
 mkdir -p .build/senses
+mkdir -p .build/senses/config.examples
 cp -rv package.json yarn.lock manifest.json ecosystem.config.js bin lib runtime scripts .build/senses
+cp -rv config/* .build/senses/config.examples
 cd .build/senses
 NODE_ENV="production" yarn
 ln -sf /config/senses config

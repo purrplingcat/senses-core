@@ -1,41 +1,41 @@
 stages:
-- build-and-test
-- combine
-- upload
+  - build-and-test
+  - combine
+  - upload
 
 buildjs:
   stage: build-and-test
   script:
-  - yarn
-  - yarn build
+    - yarn
+    - yarn build
   artifacts:
     paths:
-    - lib/*
+      - lib/*
     expire_in: 1 week
 
 testjs:
   stage: build-and-test
   script:
-  - yarn
-  - yarn lint
+    - yarn
+    - yarn lint
 
 build:
   stage: combine
   tags:
     - senses
   script:
-  - minc cp iots3/homeiot/artifacts/senses.tar senses.tar
-  - tar xvpf senses.tar
-  - mv dist www
-  - yarn build:dist
+    - minc cp iots3/homeiot/artifacts/senses.tar senses.tar
+    - tar xvpf senses.tar
+    - mv dist www
+    - yarn build:dist
   artifacts:
     paths:
-    - dist/senses.sqfs
+      - dist/senses.sqfs
     expire_in: 1 week
 
-uploaddist:
+upload-dist:
   stage: upload
   only:
-  - master
+    - master
   script:
-  - minc cp dist/senses.sqfs iots3/homeiot/artifacts/senses.sqfs
+    - minc cp dist/senses.sqfs iots3/homeiot/artifacts/senses.sqfs
