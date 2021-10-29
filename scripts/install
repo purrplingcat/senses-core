@@ -1,0 +1,8 @@
+#! /bin/bash
+
+if [ x"${APP}" = "x" ]; then
+    echo "App name is not set";
+    exit 4
+fi
+
+[ ! -L /var/www/senses ] && ln -sf /app/${APP}/www /var/www/senses
