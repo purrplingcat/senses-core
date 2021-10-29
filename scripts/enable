@@ -1,2 +1,3 @@
 mkdir -p /config/senses/certs
+site-enable senses
 echo "Senses core environment is ready."
