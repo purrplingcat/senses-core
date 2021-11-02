@@ -23,7 +23,7 @@ export function registerNewDevice(senses: ISenses, shake: Handshake, type: Devic
 
     if (device.keepalive) {
         senses.eventbus.on("discovery.alive", (uid: string, stamp: Date) => {
-            const tags = [...(<string[]>device.attributes.availabilityTags ?? []), uid];
+            const tags = [...(<string[]>device.attributes.availabilityTags ?? []), device.uid];
 
             if (tags.includes(uid)) {
                 device.lastAlive = stamp;
@@ -31,7 +31,7 @@ export function registerNewDevice(senses: ISenses, shake: Handshake, type: Devic
             }
         });
         senses.eventbus.on("discovery.death", (uid: string) => {
-            const tags = [...(<string[]>device.attributes.availabilityTags ?? []), uid];
+            const tags = [...(<string[]>device.attributes.availabilityTags ?? []), device.uid];
 
             if (tags.includes(uid) && device.lastAlive) {
                 device.lastAlive = null;
