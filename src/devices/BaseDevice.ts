@@ -324,6 +324,10 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     }
 
     public get available(): boolean {
+        return this._state._available;
+    }
+
+    protected checkAvailability(): boolean {
         if (this.keepalive) {
             if (this.timeout > 0) {
                 return this.lastAlive != null && differenceInMilliseconds(new Date(), this.lastAlive) < this.timeout;
@@ -336,10 +340,10 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     }
 
     protected _update(patch: Partial<TState>, force: boolean): boolean {
-        const snapshot = this.getState();
+        const isAvailable = this.checkAvailability();
 
-        if (snapshot && snapshot._available !== this.available) {
-            patch._available = this.available;
+        if (this.available !== isAvailable) {
+            patch._available = isAvailable;
         }
 
         const updated = this._setInternalState(patch, force);

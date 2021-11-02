@@ -23,13 +23,17 @@ export function registerNewDevice(senses: ISenses, shake: Handshake, type: Devic
 
     if (device.keepalive) {
         senses.eventbus.on("discovery.alive", (uid: string, stamp: Date) => {
-            if (device.uid === uid) {
+            const tags = [...(<string[]>device.attributes.availabilityTags), uid];
+
+            if (tags.includes(uid)) {
                 device.lastAlive = stamp;
                 consola.debug(`${device.uid} updated their last active time: ${stamp}`);
             }
         });
         senses.eventbus.on("discovery.death", (uid: string) => {
-            if (device.uid === uid && device.lastAlive) {
+            const tags = [...(<string[]>device.attributes.availabilityTags), uid];
+
+            if (tags.includes(uid) && device.lastAlive) {
                 device.lastAlive = null;
                 consola.debug(`${device.uid} is dead now.`);
                 senses.devices

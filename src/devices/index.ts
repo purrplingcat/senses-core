@@ -70,6 +70,7 @@ function setupDeviceFromConfig(senses: ISenses, platform: string, config: YAMLMa
         throw new Error("Missing device name");
     }
 
+    const keepalive = config.get("keepalive")?.toJSON();
     const type = decodeDeviceType(
         config.has("class") ? `device/${platform}, ${config.get("class")}` : `device/${platform}`,
     );
@@ -78,8 +79,8 @@ function setupDeviceFromConfig(senses: ISenses, platform: string, config: YAMLMa
         _version: "1.0",
         uid: config.get("uid") ?? uid,
         available: true,
-        keepalive: false,
-        keepaliveTimeout: 0,
+        keepalive: Boolean(keepalive),
+        keepaliveTimeout: keepalive?.timeout ?? 0,
         name: config.get("title") || config.get("name"),
         alias: config.get("name"),
         product: config.get("product") ?? "",
@@ -89,6 +90,7 @@ function setupDeviceFromConfig(senses: ISenses, platform: string, config: YAMLMa
         stateFormat: config.get("format") || "json",
         platform: config.get("platform"),
         tags: asArray<string>(config.get("tags")),
+        via: config.get("via"),
         groups: config.get("groups"),
         comm: [
             { topic: config.get("stateTopic"), type: "state" },
@@ -102,6 +104,7 @@ function setupDeviceFromConfig(senses: ISenses, platform: string, config: YAMLMa
             mainField: config.get("mainField"),
             incremental: config.get("incremental"),
             schema: config.get("schema") || "",
+            availabilityTags: asArray(keepalive?.tags),
         },
     };
 

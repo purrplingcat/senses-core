@@ -82,6 +82,9 @@ device:
           topic: home/roomba/command/clean
           format: template-json
           template: '{"zone": "{{ value }}"}'
+      keepalive:
+        tags:
+          - Roomba
         
 
 room:
