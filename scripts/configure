@@ -1,6 +1,6 @@
 #! /bin/bash
 
-if [ -f ./config.examples/config.yaml ]; then
+if [ ! -f ./config.examples/config.yaml ]; then
     cp ./config.examples/config.yaml /config/senses/config.yaml
 fi
 
