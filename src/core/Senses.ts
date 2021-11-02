@@ -206,7 +206,7 @@ export class Senses implements ISenses {
             consola.error(err);
         });
 
-        this.eventbus.on("device.state_update", (device) => {
+        this.eventbus.on("device.updated", (device) => {
             this.states.updateState("device", device.uid, () => ({
                 uid: device.uid,
                 available: device.available,

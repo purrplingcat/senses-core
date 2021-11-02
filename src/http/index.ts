@@ -30,7 +30,7 @@ function setupExpressApp(senses: ISenses): Application {
 function setupGraphQl(senses: ISenses): ApolloServer {
     const pubsub = new PubSub();
 
-    senses.eventbus.on("device.state_update", (device) => {
+    senses.eventbus.on("device.updated", (device) => {
         pubsub.publish("device.update", { deviceUpdated: deviceMapper.call(senses, device) });
     });
 

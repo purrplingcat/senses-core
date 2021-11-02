@@ -21,7 +21,7 @@ export function setup(senses: ISenses): void {
         if (topic.startsWith(`${senses.domain}/$senses/service/`)) handleService(topic, message);
     });
 
-    senses.eventbus.on("device.state_update", (device: Device) => {
+    senses.eventbus.on("device.updated", (device: Device) => {
         senses.mqtt.publish(`${senses.domain}/$senses/device/${device.uid}`, JSON.stringify(device.getState()));
     });
 

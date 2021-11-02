@@ -263,10 +263,13 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
     private _setInternalState(newState: Partial<TState>, force = false): boolean {
         if (!force && isEmptyObject(newState)) return false;
 
-        const nextState = Object.assign({}, this._state, newState ?? {});
+        const nextState = Object.freeze({ ...this._state, ...newState });
 
         if (force || !equal(this._state, nextState)) {
-            this._state = Object.freeze(nextState);
+            const prevState = this._state;
+
+            this._state = nextState;
+            this.eventbus?.emit("device.state_changed", this, nextState, prevState);
 
             return true;
         }
@@ -339,10 +342,10 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
             patch._available = this.available;
         }
 
-        const updated = this._setInternalState(patch);
+        const updated = this._setInternalState(patch, force);
 
         if (force || updated) {
-            this.eventbus?.emit("device.state_update", this, this.senses);
+            this.eventbus?.emit("device.updated", this, this.senses);
             return true;
         }
 
