@@ -28,12 +28,12 @@ export function asArray<T>(val: unknown): T[] {
         return [];
     }
 
-    if (Array.isArray(val)) {
-        return val as T[];
-    }
-
     if (val instanceof YAMLSeq || val instanceof YAMLMap) {
         val = val.toJSON();
+    }
+
+    if (Array.isArray(val)) {
+        return val as T[];
     }
 
     if (typeof val === "object") {
@@ -41,6 +41,18 @@ export function asArray<T>(val: unknown): T[] {
     }
 
     return Array.of(<T>val);
+}
+
+export function arrayOf<T>(val?: T | T[]): T[] {
+    if (val == null) {
+        return [];
+    }
+
+    return !Array.isArray(val) ? Array.of(val) : val;
+}
+
+export function arrayOfOrNull<T>(val?: T | T[]): T[] | null {
+    return val != null ? arrayOf(val) : null;
 }
 
 export function toObject<T extends { [k: string]: unknown }>(val: unknown): T {

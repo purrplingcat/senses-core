@@ -5,7 +5,7 @@ import yaml from "yaml";
 import { Senses } from "~core/Senses";
 import { loadComponents } from "~core/loader";
 
-const components = ["http", "devices", "room", "exposed", "scene", "watcher"].map((c) => __dirname + "/" + c);
+const components = ["http", "devices", "room", "exposed", "scene", "automation"].map((c) => __dirname + "/" + c);
 
 type ISecureClientOptions = {
     caFile?: string;
@@ -48,6 +48,7 @@ export async function setupSenses(configFile: string, debug: boolean): Promise<S
     const senses = new Senses(mqtt, domain, name, debug);
 
     await loadComponents(components, senses, config);
+    senses.eventbus.emit("setup", senses);
 
     return senses;
 }

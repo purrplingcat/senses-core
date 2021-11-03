@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 "use strict";
 if (require.main === module) {
-    const runner = require("../runtime/node-app");
-    const manifest = require("../package.json");
+    const runtime = require("../runtime/node-app");
+    const manifest = require("../manifest.json");
 
-    runner(manifest);
+    runtime(manifest);
 }

@@ -16,9 +16,7 @@ expose:
   enabled: yes
 
 watcher:
-  interval: 1000
-
-test: !include lol
+  interval: 2000
 
 device:
   discovery: true
@@ -108,3 +106,10 @@ scene:
   - name: kitchen_night
     title: Noc
     room: kitchen
+
+automation:
+  - name: test
+    trigger:
+      on: state
+      device: vacuum-roomba
+      to: docked

@@ -59,6 +59,11 @@ export class Senses implements ISenses {
     renderer: IRenderer;
     private _uid: string;
     private _discovery?: Discovery;
+    private _loopTimeout: NodeJS.Timeout | null = null;
+    private _loop = () => {
+        this._update();
+        this._loopTimeout = setTimeout(this._loop, 1000);
+    };
 
     constructor(mqtt: MqttClient, domain: string, name: string, debug = false) {
         this._uid = `AC-${domain}-senses-${process.env.NODE_INSTANCE_ID || 0}-${process.pid}-${Date.now()}`;
@@ -214,11 +219,22 @@ export class Senses implements ISenses {
             }));
         });
 
-        consola.success("Senses assistant ready");
+        if (this._loopTimeout) {
+            clearTimeout(this._loopTimeout);
+        }
+
+        this._loop();
         this.eventbus.emit("start", this);
+        consola.success("Senses assistant ready");
     }
 
     handshake(expectReplies = true): void {
         this._discovery?.handshake(expectReplies);
+    }
+
+    private _update() {
+        for (const device of this.devices) {
+            device.update();
+        }
     }
 }
