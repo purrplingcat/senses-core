@@ -1,8 +1,16 @@
 import consola, { Consola } from "consola";
 
-export type Action = () => Promise<void> | void;
-export type Trigger = (trap: () => Promise<void>) => void;
-export type Condition = () => Promise<boolean> | boolean;
+export type Action = {
+    (context: object): Promise<boolean | void> | boolean | void;
+    id?: string;
+};
+
+export type Trigger = {
+    (trap: (context?: object) => Promise<void>): void;
+    id?: string;
+};
+
+export type Condition = (context: object) => Promise<boolean> | boolean;
 
 export default class Automation {
     name: string;
@@ -20,7 +28,7 @@ export default class Automation {
     }
 
     trigger(trigger: Trigger): this {
-        trigger(this.trap.bind(this));
+        trigger((opts = {}) => this.trap({ ...opts, source: "trigger", id: trigger.id }).catch(this._logger.error));
         this.triggers.push(trigger);
 
         return this;
@@ -38,14 +46,29 @@ export default class Automation {
         return this;
     }
 
-    async trap(): Promise<void> {
-        this._logger.trace(`trap in automation ${this.name}`);
-        for (const condition of this.conditions) {
-            if ((await condition()) === false) {
+    private async _play(context: object) {
+        this._logger.trace(`Automation ${this.name}: Playing ${this.actions.length} actions ...`);
+
+        for (const action of this.actions) {
+            if ((await action(context)) === false) {
+                this._logger.trace(`Action ${action.id} returned false, break the action sequence`);
                 return;
             }
         }
 
-        await Promise.all(this.actions.map((action) => action()));
+        this._logger.trace("Action sequence is done!");
+    }
+
+    async trap(context: object = {}): Promise<void> {
+        this._logger.trace(`trap in automation ${this.name}`);
+
+        for (const condition of this.conditions) {
+            if (!(await condition(context))) {
+                this._logger.trace("Conditions mismatch, no action triggered");
+                return;
+            }
+        }
+
+        this._play(context).catch(this._logger.error);
     }
 }

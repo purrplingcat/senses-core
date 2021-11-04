@@ -1,10 +1,11 @@
 export interface TriggerConfig {
     on: string;
+    id?: string;
     [key: string]: number | string | boolean | null;
 }
 
 export interface ConditionConfig {
-    check: string;
+    condition: string;
 }
 
 export interface ActionConfig {

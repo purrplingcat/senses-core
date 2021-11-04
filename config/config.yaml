@@ -112,4 +112,9 @@ automation:
     trigger:
       on: state
       device: vacuum-roomba
+      from:
+        - unknown
+        - idle 
+        - returning
       to: docked
+      for: 5s

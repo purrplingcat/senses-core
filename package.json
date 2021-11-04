@@ -12,7 +12,8 @@
     "dev": "tsc && bin/senses",
     "build": "tsc",
     "build:dist": "tools/build-dist.sh",
-    "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix"
+    "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet",
+    "lint:fix": "yarn lint --fix"
   },
   "devDependencies": {
     "@types/consola": "^2.2.5",
@@ -44,6 +45,7 @@
     "mqtt": "^4.2.6",
     "mqtt-pattern": "^1.2.0",
     "nunjucks": "^3.2.3",
+    "parse-duration": "^1.0.2",
     "query": "protobi/query",
     "reflect-metadata": "^0.1.13",
     "yaml": "^1.10.2",

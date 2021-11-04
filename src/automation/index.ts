@@ -30,7 +30,7 @@ async function createAction(config: ActionConfig, senses: ISenses): Promise<Acti
 }
 
 async function createCondition(config: ConditionConfig, senses: ISenses): Promise<Condition> {
-    const factory = await loadFactory("~automation/conditions", config.check);
+    const factory = await loadFactory("~automation/conditions", config.condition);
 
     return factory.default(senses, config);
 }
