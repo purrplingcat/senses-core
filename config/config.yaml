@@ -118,5 +118,14 @@ automation:
           - returning
         to: docked
         for: 5s
-      - on: schedule
-        cron: "*/10 * * * * *"
+      #- on: schedule
+      #  cron: "*/10 * * * * *"
+    action:
+      - do: setState
+        device:
+          room: kitchen
+        payload:
+          state: on
+      # - do: scene.activate
+      #  scene:
+      #    name: kitchen_night

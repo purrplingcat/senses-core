@@ -61,7 +61,8 @@ export default class Automation {
         this._logger.trace("Action sequence is done!");
     }
 
-    async trap(context: object = {}): Promise<void> {
+    async trap(context: Record<string, any> = {}): Promise<void> {
+        context.automation = this;
         this._logger.trace(`trap in automation ${this.name}`, context);
 
         for (const condition of this.conditions) {

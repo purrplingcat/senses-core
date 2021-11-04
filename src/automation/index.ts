@@ -47,7 +47,11 @@ async function createAutomation(config: AutomationConfig, senses: ISenses): Prom
     }
 
     for (const action of arrayOf<ActionConfig>(config.action)) {
-        automation.trigger(await createAction(action, senses));
+        if (!action.id) {
+            action.id = `action${automation.actions.length}`;
+        }
+
+        automation.action(await createAction(action, senses));
     }
 
     return automation;
@@ -62,6 +66,10 @@ export function setup(senses: ISenses, config: YAMLSeq): void {
 
     senses.eventbus.on("setup", async () => {
         for (const automation of automations) {
+            if (!automation.name) {
+                automation.name = `automation${automationRegistry.length}`;
+            }
+
             automationRegistry.push(await createAutomation(automation, senses));
         }
 

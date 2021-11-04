@@ -10,6 +10,7 @@ export interface ConditionConfig {
 
 export interface ActionConfig {
     do: string;
+    id?: string;
 }
 
 export interface AutomationConfig {

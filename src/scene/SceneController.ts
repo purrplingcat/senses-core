@@ -1,3 +1,4 @@
+import consola from "consola";
 import { ISenses } from "~core/Senses";
 import { IScene } from "~scene";
 
@@ -24,5 +25,6 @@ export default class SceneController implements ISceneController {
 
         this._senses.eventbus.emit("scene.activate", scene);
         this._senses.mqtt.publish(scene.topic, scene.name);
+        consola.info(`Activated scene ${scene.uid}`);
     }
 }
