@@ -32,7 +32,7 @@ function resolveDependencies(name: string, dependencies: string[], eventBus: Eve
             }
 
             logger.trace("Awaiting resolve dependencies:", remaining);
-            eventBus.on("loaded", function onLoaded(component: Component) {
+            eventBus.on("component.loaded", function onLoaded(component: Component) {
                 try {
                     remaining = remaining.filter((c) => c != component.name);
 
@@ -91,9 +91,9 @@ export async function loadComponent(path: string, senses: ISenses, config: Docum
         });
     }
 
-    senses.components.push(component);
-    senses.eventbus.emit("loaded", component);
     loadedComponents.push(component);
+    senses.components.push(component);
+    senses.eventbus.emit("component.loaded", component);
     consola.debug("Loaded component " + component.name);
 
     return component;

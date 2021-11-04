@@ -13,7 +13,7 @@ export type StateTriggerOptions = {
 };
 
 export default function createStateTrigger(senses: ISenses, options: StateTriggerOptions) {
-    return function stateTrigger(trap: () => Promise<void>): void {
+    return function state(trap: () => Promise<void>): void {
         let timer: NodeJS.Timeout | null = null;
         senses.eventbus.on("device.state_changed", (device, newState, oldState) => {
             const uids = arrayOfOrNull(options.device);

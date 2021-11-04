@@ -110,11 +110,13 @@ scene:
 automation:
   - name: test
     trigger:
-      on: state
-      device: vacuum-roomba
-      from:
-        - unknown
-        - idle 
-        - returning
-      to: docked
-      for: 5s
+      - on: state
+        device: vacuum-roomba
+        from:
+          - unknown
+          - idle 
+          - returning
+        to: docked
+        for: 5s
+      - on: schedule
+        cron: "*/10 * * * * *"

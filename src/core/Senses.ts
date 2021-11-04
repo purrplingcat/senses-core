@@ -16,6 +16,7 @@ import StateMachine, { IStateMachine } from "./StateMachine";
 import { IRenderer, Renderer } from "./template";
 
 export interface ISenses {
+    config: any;
     components: Component[];
     debug: boolean;
     eventbus: EventBus;
@@ -30,6 +31,7 @@ export interface ISenses {
     name: string;
     states: IStateMachine;
     renderer: IRenderer;
+    isRunning: boolean;
     hasDevice(uidOrEntityId: string): boolean;
     fetchDevice(uidOrEntityId: string): Device;
     addDevice(device: Device): void;
@@ -38,9 +40,11 @@ export interface ISenses {
     callService<TParams>(name: string, params: TParams): Promise<boolean>;
     getUid(): string;
     handshake(): void;
+    ready(callback?: () => void): Promise<void>;
 }
 
 export class Senses implements ISenses {
+    config: any;
     debug: boolean;
     eventbus: EventBus;
     mqtt: MqttClient;
@@ -59,6 +63,7 @@ export class Senses implements ISenses {
     renderer: IRenderer;
     private _uid: string;
     private _discovery?: Discovery;
+    private _isReady = false;
     private _loopTimeout: NodeJS.Timeout | null = null;
     private _loop = () => {
         this._update();
@@ -68,6 +73,7 @@ export class Senses implements ISenses {
     constructor(mqtt: MqttClient, domain: string, name: string, debug = false) {
         this._uid = `AC-${domain}-senses-${process.env.NODE_INSTANCE_ID || 0}-${process.pid}-${Date.now()}`;
         this.eventbus = new EventBus(this);
+        this.config = {};
         this.devices = [];
         this.services = [];
         this.rooms = [];
@@ -82,6 +88,25 @@ export class Senses implements ISenses {
         this.drivers = { ...drivers };
         this.scenes = new SceneController(this);
         this.renderer = new Renderer(this);
+    }
+
+    get isRunning(): boolean {
+        return this._isReady && this.startAt != null;
+    }
+
+    ready(callback?: () => void): Promise<void> {
+        return new Promise((resolve) => {
+            const onStart = () => {
+                callback && callback();
+                return resolve();
+            };
+
+            if (this.isRunning) {
+                return onStart();
+            }
+
+            this.eventbus.once("start", onStart);
+        });
     }
 
     addService(service: IService): void {
@@ -224,6 +249,7 @@ export class Senses implements ISenses {
         }
 
         this._loop();
+        this._isReady = true;
         this.eventbus.emit("start", this);
         consola.success("Senses assistant ready");
     }

@@ -28,7 +28,9 @@ export default class Automation {
     }
 
     trigger(trigger: Trigger): this {
-        trigger((opts = {}) => this.trap({ ...opts, source: "trigger", id: trigger.id }).catch(this._logger.error));
+        trigger((opts = {}) =>
+            this.trap({ ...opts, source: "trigger", id: trigger.id, type: trigger.name }).catch(this._logger.error),
+        );
         this.triggers.push(trigger);
 
         return this;
@@ -60,7 +62,7 @@ export default class Automation {
     }
 
     async trap(context: object = {}): Promise<void> {
-        this._logger.trace(`trap in automation ${this.name}`);
+        this._logger.trace(`trap in automation ${this.name}`, context);
 
         for (const condition of this.conditions) {
             if (!(await condition(context))) {
