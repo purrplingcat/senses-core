@@ -1,15 +1,14 @@
 import parseDuration from "parse-duration";
-import { equal } from "fast-shallow-equal";
 import { ISenses } from "~core/Senses";
 import { arrayOf, arrayOfOrNull } from "~core/utils";
 import consola from "consola";
 import { Trigger } from "~automation/Automation";
 
-export type StateTriggerOptions = {
-    device?: string | string[] | object;
-    from?: string | string[];
-    to?: string | string[];
-    attribute?: string | string[];
+export type NumericStateTriggerOptions = {
+    device: string | string[] | object;
+    attribute: string | string[];
+    above?: number;
+    below?: number;
     for?: number | string;
 };
 
@@ -21,14 +20,18 @@ function fetchUids(query: string | string[] | object, senses: ISenses): string[]
     return arrayOf(query);
 }
 
-export default function createStateTrigger(senses: ISenses, options: StateTriggerOptions): Trigger {
-    return function state(trap: () => Promise<void>): void {
+function between(val: number, min: number, max: number) {
+    return val > min && val < max;
+}
+
+export default function createStateTrigger(senses: ISenses, options: NumericStateTriggerOptions): Trigger {
+    return function stateNumeric(trap: () => Promise<void>): void {
         let timer: NodeJS.Timeout | null = null;
 
         senses.eventbus.on("device.state_changed", (device, newState, oldState) => {
             const uids = fetchUids(options.device ?? [], senses);
-            const from = arrayOfOrNull(options.from);
-            const to = arrayOfOrNull(options.to);
+            const above = Number(options.above ?? Number.MIN_VALUE);
+            const below = Number(options.below ?? Number.MAX_VALUE);
             const forTime = parseDuration(String(options.for ?? 0));
             const keys: string[] = arrayOfOrNull(options.attribute) || [
                 ...new Set([...Object.keys(newState), ...Object.keys(oldState)]),
@@ -41,13 +44,13 @@ export default function createStateTrigger(senses: ISenses, options: StateTrigge
             let changed = false;
             let match = false;
             for (const key of keys) {
-                const oldVal = Reflect.get(oldState, key);
-                const newVal = Reflect.get(newState, key);
-                const fromMatch = !from || from.includes(oldVal);
-                const toMatch = !to || to.includes(newVal);
+                const oldVal = Number(Reflect.get(oldState, key));
+                const newVal = Number(Reflect.get(newState, key));
+                const isOldBetween = between(oldVal, above, below);
+                const isNewBetween = between(newVal, above, below);
 
-                changed ||= !equal(oldVal, newVal);
-                match ||= fromMatch && toMatch;
+                changed ||= isOldBetween != isNewBetween;
+                match ||= isNewBetween;
             }
 
             consola.trace(`[State trigger] Changed: ${changed}, Match: ${match}`);

@@ -118,6 +118,11 @@ automation:
           - returning
         to: docked
         for: 5s
+      - on: state.numeric
+        device: vacuum-roomba
+        attribute: battery
+        above: 90
+        for: 10s
       #- on: schedule
       #  cron: "*/10 * * * * *"
     action:
