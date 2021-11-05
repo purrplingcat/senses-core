@@ -5,6 +5,7 @@ module.exports = {
             namespace: "senses",
             script: "bin/senses",
             cwd: __dirname,
+            time: true,
         },
     ],
 };
