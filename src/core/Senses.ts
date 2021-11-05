@@ -1,11 +1,12 @@
 import consola from "consola";
 import { Application } from "express";
 import { MqttClient } from "mqtt";
+import Home from "~devices/Home";
 import SceneController, { ISceneController } from "~scene/SceneController";
-import Device from "../devices/Device";
-import { IGroup } from "../devices/Group";
-import { IRoom } from "../devices/Room";
-import drivers, { DriverMap } from "../drivers";
+import Device from "~devices/Device";
+import { IGroup } from "~devices/Group";
+import { IRoom } from "~devices/Room";
+import drivers, { DriverMap } from "~drivers";
 import Discovery from "./Discovery";
 import Entity from "./Entity";
 import EventBus from "./EventBus";
@@ -61,6 +62,7 @@ export class Senses implements ISenses {
     name: string;
     startAt: number;
     renderer: IRenderer;
+    home: Home;
     private _uid: string;
     private _discovery?: Discovery;
     private _isReady = false;
@@ -88,6 +90,7 @@ export class Senses implements ISenses {
         this.drivers = { ...drivers };
         this.scenes = new SceneController(this);
         this.renderer = new Renderer(this);
+        this.home = new Home(this);
     }
 
     get isRunning(): boolean {
@@ -259,8 +262,14 @@ export class Senses implements ISenses {
     }
 
     private _update() {
+        if (!this.isRunning) {
+            return;
+        }
+
         for (const device of this.devices) {
             device.update();
         }
+
+        this.eventbus.emit("update");
     }
 }

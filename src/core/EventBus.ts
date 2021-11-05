@@ -18,6 +18,7 @@ export type DeviceStateChangeListener<TState = {}> = (
 declare interface EventBus {
     emit(event: "setup", ...args: Parameters<SensesListener>): boolean;
     emit(event: "start", ...args: Parameters<SensesListener>): boolean;
+    emit(event: "update"): boolean;
     emit(event: "mqtt.connect", mqtt: MqttClient): boolean;
     emit(event: "mqtt.message", topic: string, message: string): boolean;
     emit(event: "device.add", ...args: Parameters<DeviceListener>): boolean;
@@ -28,6 +29,7 @@ declare interface EventBus {
 
     on(event: "setup", listener: SensesListener): this;
     on(event: "start", listener: SensesListener): this;
+    on(event: "update"): this;
     on(event: "mqtt.connect", listener: MqttConnectListener): this;
     on(event: "mqtt.message", listener: (topic: string, message: string) => void): this;
     on(event: "device.add", listener: DeviceListener): this;
