@@ -29,7 +29,13 @@ export type SunUtils = {
     buildEventList: (now: Date, offset?: number) => [string, Date][];
     next: (now: Date, events: string[], offset?: number) => [string, Date] | null;
     prev: (now: Date, events: string[], offset?: number) => [string, Date] | null;
-    isSunBetween: (now: Date, before: keyof SunTimes, after: keyof SunTimes, offset?: number) => boolean;
+    isSunBetween: (
+        now: Date,
+        before: keyof SunTimes,
+        after: keyof SunTimes,
+        beforeOffset?: number,
+        afterOffset?: number,
+    ) => boolean;
     getSunTimes: (now: Date) => SunTimes;
 };
 
@@ -63,9 +69,9 @@ export function sunUtilsFor(lat: number, lon: number): SunUtils {
         );
     }
 
-    function isSunBetween(now: Date, before: keyof SunTimes, after: keyof SunTimes, offset = 0) {
-        const [nextEv] = next(now, [before, after], offset) ?? [];
-        const [prevEv] = prev(now, [before, after], offset) ?? [];
+    function isSunBetween(now: Date, before: keyof SunTimes, after: keyof SunTimes, beforeOffset = 0, afterOffset = 0) {
+        const [nextEv] = next(now, [before, after], beforeOffset) ?? [];
+        const [prevEv] = prev(now, [before, after], afterOffset) ?? [];
 
         return before === nextEv && after === prevEv;
     }

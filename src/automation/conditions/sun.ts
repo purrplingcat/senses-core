@@ -8,7 +8,8 @@ export type SunConditionOptions = {
     after?: keyof SunTimes;
     lat?: number;
     lon?: number;
-    offset?: number | string;
+    beforeOffset?: number | string;
+    afterOffset?: number | string;
 };
 
 export default function createSunCondition(senses: ISenses, options: SunConditionOptions): Condition {
@@ -19,11 +20,11 @@ export default function createSunCondition(senses: ISenses, options: SunConditio
     return function sun() {
         const before = options.before || "midnight";
         const after = options.after || "midnight";
+        const beforeOffset = parseDuration(String(options.beforeOffset ?? 0));
+        const afterOffset = parseDuration(String(options.afterOffset ?? 0));
         const lat = options.lat ?? senses.config?.position?.lat ?? 0;
         const lon = options.lon ?? senses.config?.position?.long ?? 0;
-        const offset = parseDuration(String(options.offset ?? 0));
-        const sunUtils = sunUtilsFor(lat, lon);
 
-        return sunUtils.isSunBetween(new Date(), before, after, offset);
+        return sunUtilsFor(lat, lon).isSunBetween(new Date(), before, after, beforeOffset, afterOffset);
     };
 }
