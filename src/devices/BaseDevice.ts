@@ -114,6 +114,7 @@ export default abstract class BaseDevice<TState extends DeviceState = DeviceStat
             return this.senses.renderer.render(publisher.template, {
                 value,
                 context,
+                state: this.getState(),
                 device: this,
             });
         };

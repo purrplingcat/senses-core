@@ -1,3 +1,3 @@
 declare module "fast-shallow-equal" {
-    export function equal(objA: object, objB: object): boolean;
+    export function equal(valA: unknown, valB: unknown): boolean;
 }

@@ -1,21 +1,13 @@
 import consolaGlobalInstance from "consola";
-import path from "path";
 import { YAMLSeq } from "yaml/types";
 import { ISenses } from "~core/Senses";
 import { arrayOf } from "~core/utils";
 import Automation, { Action, Condition, Trigger } from "./Automation";
 import { ActionConfig, AutomationConfig, ConditionConfig, TriggerConfig } from "./configTypes";
+import { loadFactory } from "./utils";
 
 const automationRegistry: Automation[] = [];
 export const name = "automation";
-
-async function loadFactory(p: string, factoryName: string) {
-    if (factoryName.startsWith(".")) {
-        throw Error("Illegal factory name");
-    }
-
-    return await import(path.join(p, factoryName));
-}
 
 async function createTrigger(config: TriggerConfig, senses: ISenses): Promise<Trigger> {
     const factory = await loadFactory("~automation/triggers", config.on);
@@ -29,7 +21,7 @@ async function createAction(config: ActionConfig, senses: ISenses): Promise<Acti
     return factory.default(senses, config);
 }
 
-async function createCondition(config: ConditionConfig, senses: ISenses): Promise<Condition> {
+export async function createCondition(config: ConditionConfig, senses: ISenses): Promise<Condition> {
     const factory = await loadFactory("~automation/conditions", config.condition);
 
     return factory.default(senses, config);

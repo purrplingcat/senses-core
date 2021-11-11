@@ -383,6 +383,11 @@
     "@types/mime" "^1"
     "@types/node" "*"
 
+"@types/suncalc@^1.8.1":
+  version "1.8.1"
+  resolved "https://registry.yarnpkg.com/@types/suncalc/-/suncalc-1.8.1.tgz#64fd7e779c03e5df16e6140b8e00d4521fa4185e"
+  integrity sha512-PNtzFQhdAIw3x5HEjVMxbyBwciX42C/Cg6J1foq2z/t9rucLGGu9nqQxOl005wGZR/fOxw49exwZUCmbnT/vGw==
+
 "@types/uid-generator@^2.0.2":
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/@types/uid-generator/-/uid-generator-2.0.2.tgz#2c1354bfd1cd364454f0cd9787a2e075bff2e4d1"
@@ -2415,6 +2420,11 @@ subscriptions-transport-ws@^0.9.18, subscriptions-transport-ws@^0.9.19:
     iterall "^1.2.1"
     symbol-observable "^1.0.4"
     ws "^5.2.0 || ^6.0.0 || ^7.0.0"
+
+suncalc@^1.8.0:
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/suncalc/-/suncalc-1.8.0.tgz#1d9898109563078750f4994a959e654d876acbf5"
+  integrity sha1-HZiYEJVjB4dQ9JlKlZ5lTYdqy/U=
 
 supports-color@^5.3.0:
   version "5.5.0"

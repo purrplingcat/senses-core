@@ -179,7 +179,7 @@ export class Senses implements ISenses {
     }
 
     getEntities(): Entity[] {
-        return [...this.devices, ...this.rooms];
+        return [this.home, ...this.devices, ...this.rooms];
     }
 
     getUid(): string {
