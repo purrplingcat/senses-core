@@ -3,9 +3,9 @@ import fs from "fs";
 import mqtt, { IClientOptions } from "mqtt";
 import yaml from "yaml";
 import { Senses } from "~core/Senses";
-import { loadComponents } from "~core/loader";
+import { loadComponents } from "~loader";
 
-const components = ["http", "devices", "room", "exposed", "scene", "automation"].map((c) => __dirname + "/" + c);
+const components = ["~http", "~devices", "~room", "~exposed", "~scene", "~automation"];
 
 type ISecureClientOptions = {
     caFile?: string;

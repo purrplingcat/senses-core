@@ -1,8 +1,7 @@
 import { ISenses } from "../core/Senses";
-import Device from "../devices/Device";
+import Device from "~devices/Device";
 import MQTTPattern from "mqtt-pattern";
 import consola from "consola";
-import { YAMLMap } from "yaml/types";
 
 export const name = "expose";
 export const domain = name;

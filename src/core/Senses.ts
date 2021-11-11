@@ -11,7 +11,7 @@ import Discovery from "./Discovery";
 import Entity from "./Entity";
 import EventBus from "./EventBus";
 import Handshake from "./Handshake";
-import { Component } from "./loader";
+import { Component } from "~loader";
 import IService from "./Service";
 import StateMachine, { IStateMachine } from "./StateMachine";
 import { IRenderer, Renderer } from "./template";

@@ -1,8 +1,10 @@
 import consola from "consola";
+import fs from "fs";
+import path from "path";
 import { Document } from "yaml";
 import { YAMLMap } from "yaml/types";
-import EventBus from "./EventBus";
-import { ISenses } from "./Senses";
+import EventBus from "~core/EventBus";
+import { ISenses } from "~core/Senses";
 
 export type ComponentDict = { [name: string]: string };
 
