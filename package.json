@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "clean": "rimraf dist lib .build *.tsbuildinfo",
-    "dev": "tsc && bin/senses",
+    "dev": "tsc --sourceMap && NODE_OPTIONS=--enable-source-maps bin/senses",
     "build": "tsc",
     "build:dist": "tools/build-dist.sh",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet",
