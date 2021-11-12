@@ -1,6 +1,6 @@
 import parseDuration from "parse-duration";
 import { Condition } from "~automation/Automation";
-import { SunTimes, sunUtilsFor } from "~automation/utils";
+import { SunTimes, sunUtilsFor } from "~utils/sun";
 import { ISenses } from "~core/Senses";
 
 export type SunConditionOptions = {

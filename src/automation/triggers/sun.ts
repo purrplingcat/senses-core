@@ -1,7 +1,7 @@
 import { addDays } from "date-fns";
 import parseDuration from "parse-duration";
 import { Trigger } from "~automation/Automation";
-import { getSunTimes, SunTimes } from "~automation/utils";
+import { getSunTimes, SunTimes } from "~utils/sun";
 import { ISenses } from "~core/Senses";
 
 type SunTriggerOptions = {

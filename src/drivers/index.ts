@@ -10,4 +10,12 @@ const drivers: DriverMap = {
     senses,
 };
 
+export function addDriver(name: string, driver: Driver): void {
+    if (Object.keys(drivers).includes(name)) {
+        throw new Error(`Driver '${name}' has already added!`);
+    }
+
+    drivers[name] = driver;
+}
+
 export default drivers;

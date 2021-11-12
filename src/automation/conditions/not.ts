@@ -2,7 +2,7 @@ import { createCondition } from "~automation";
 import { Condition } from "~automation/Automation";
 import { ConditionConfig } from "~automation/configTypes";
 import { ISenses } from "~core/Senses";
-import { asArray } from "~core/utils";
+import { asArray } from "~utils";
 
 export type NotConditionOptions = {
     condition: ConditionConfig | ConditionConfig[];

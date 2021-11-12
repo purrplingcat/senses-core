@@ -1,6 +1,6 @@
 import { Condition } from "~automation/Automation";
-import { between } from "~automation/utils";
 import { ISenses } from "~core/Senses";
+import { between } from "~utils";
 
 export type NumericStateConditionOptions = {
     device: string;

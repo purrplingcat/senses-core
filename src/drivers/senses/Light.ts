@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import "reflect-metadata";
-import ITurnableDevice from "../../devices/TurnableDevice";
-import BaseDevice, { DeviceState } from "../../devices/BaseDevice";
-import { hexToRgb, isDefined, rgbToHex } from "../../core/utils";
-import { ISenses } from "../../core/Senses";
-import { extraAttr } from "../../devices/metadata";
+import ITurnableDevice from "~devices/TurnableDevice";
+import BaseDevice, { DeviceState } from "~devices/BaseDevice";
+import { ISenses } from "~core/Senses";
+import { extraAttr } from "~devices/metadata";
 import { Payload } from "~types/senses";
+import { hexToRgb, isDefined, rgbToHex } from "~utils";
 
 const int = (num: number) => Math.trunc(num);
 

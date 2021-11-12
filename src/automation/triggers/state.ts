@@ -1,9 +1,10 @@
+import consola from "consola";
 import parseDuration from "parse-duration";
 import { equal } from "fast-shallow-equal";
-import { ISenses } from "~core/Senses";
-import { arrayOf, arrayOfOrNull, fetchUids } from "~core/utils";
-import consola from "consola";
 import { Trigger } from "~automation/Automation";
+import { ISenses } from "~core/Senses";
+import { arrayOfOrNull } from "~utils";
+import { fetchUids } from "~utils/query";
 
 export type StateTriggerOptions = {
     device?: string | string[] | object;

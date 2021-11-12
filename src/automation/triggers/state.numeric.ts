@@ -1,9 +1,9 @@
-import parseDuration from "parse-duration";
-import { ISenses } from "~core/Senses";
-import { arrayOfOrNull, fetchUids } from "~core/utils";
 import consola from "consola";
+import parseDuration from "parse-duration";
 import { Trigger } from "~automation/Automation";
-import { between } from "~automation/utils";
+import { ISenses } from "~core/Senses";
+import { arrayOfOrNull, between } from "~utils";
+import { fetchUids } from "~utils/query";
 
 export type NumericStateTriggerOptions = {
     device: string | string[] | object;

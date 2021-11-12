@@ -2,8 +2,8 @@ import consola from "consola";
 import Handshake, { DeviceType } from "../core/Handshake";
 import { ISenses } from "../core/Senses";
 import { DriverMap } from "../drivers";
-import BaseDevice from "./BaseDevice";
-import Device from "./Device";
+import BaseDevice from "../devices/BaseDevice";
+import Device from "../devices/Device";
 
 export function registerNewDevice(senses: ISenses, shake: Handshake, type: DeviceType): BaseDevice {
     const device = createDevice(senses, senses.drivers, shake, type);

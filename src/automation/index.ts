@@ -1,7 +1,7 @@
 import consolaGlobalInstance from "consola";
 import { YAMLSeq } from "yaml/types";
 import { ISenses } from "~core/Senses";
-import { arrayOf } from "~core/utils";
+import { arrayOf } from "~utils";
 import Automation, { Action, Condition, Trigger } from "./Automation";
 import { ActionConfig, AutomationConfig, ConditionConfig, TriggerConfig } from "./configTypes";
 import { loadFactory } from "./utils";

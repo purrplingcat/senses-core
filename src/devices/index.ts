@@ -1,10 +1,10 @@
 import consola from "consola";
-import { ISenses } from "../core/Senses";
+import { ISenses } from "~core/Senses";
 import { YAMLMap } from "yaml/types";
-import Handshake, { decodeDeviceType } from "../core/Handshake";
-import BaseDevice from "../devices/BaseDevice";
-import { asArray } from "../core/utils";
-import { registerNewDevice, updateDeviceInfo } from "../devices/utils";
+import Handshake, { decodeDeviceType } from "~core/Handshake";
+import BaseDevice from "~devices/BaseDevice";
+import { asArray } from "~utils";
+import { registerNewDevice, updateDeviceInfo } from "~utils/devices";
 
 export const name = "device";
 

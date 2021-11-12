@@ -1,10 +1,13 @@
 import { YAMLSeq, YAMLMap } from "yaml/types";
-import { ISenses } from "./Senses";
 
 export type PureOptions = {
     nulls?: boolean;
     underscores?: boolean;
 };
+
+export function between(val: number, min: number, max: number): boolean {
+    return val > min && val < max;
+}
 
 export function pure<T extends Record<string | number | symbol, unknown>>(obj: T, opts?: PureOptions): T {
     for (const key of Object.keys(obj)) {
@@ -172,14 +175,4 @@ export function parseBoolean(value: unknown): boolean {
     }
 
     throw new Error(`Invalid boolean value: `);
-}
-
-export function fetchUids(query: string | string[] | object | object[], senses: ISenses): string[] {
-    return arrayOf(query).flatMap((q) => {
-        if (typeof q === "object") {
-            return senses.devices.query(q).map((d) => d.uid);
-        }
-
-        return q;
-    });
 }

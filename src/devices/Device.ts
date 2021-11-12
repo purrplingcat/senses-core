@@ -1,9 +1,9 @@
 import "reflect-metadata";
 import consola, { Consola } from "consola";
-import Entity, { UniqueIdentity } from "../core/Entity";
-import Handshake, { decodeDeviceType } from "../core/Handshake";
-import { ISenses } from "../core/Senses";
-import { asArray, toObject } from "../core/utils";
+import Entity, { UniqueIdentity } from "~core/Entity";
+import Handshake, { decodeDeviceType } from "~core/Handshake";
+import { ISenses } from "~/core/Senses";
+import { asArray, toObject } from "~utils";
 import { extraAttrSymbol } from "./metadata";
 
 export interface DeviceInfo {

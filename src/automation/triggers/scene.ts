@@ -1,6 +1,6 @@
 import { Trigger } from "~automation/Automation";
 import { ISenses } from "~core/Senses";
-import { arrayOf } from "~core/utils";
+import { arrayOf } from "~utils";
 import { IScene } from "~scene";
 
 export type SceneTriggerOptions = {

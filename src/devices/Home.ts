@@ -1,6 +1,6 @@
 import { equal } from "fast-shallow-equal";
 import { ISenses, Senses } from "~core/Senses";
-import { asArray, isEmptyObject } from "~core/utils";
+import { asArray, isEmptyObject } from "~utils";
 import Device from "./Device";
 
 export type HomeFeatures = keyof HomeState;
