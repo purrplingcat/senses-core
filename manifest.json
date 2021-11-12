@@ -4,6 +4,10 @@
     "version": "1.0.0",
     "main": "lib/app.js",
     "resolve": {
-        "@senses": "./packages"
-    }
+        "~": [".", "./lib"]
+    },
+    "polyfills": [
+        "reflect-metadata",
+        "./runtime/polyfills.js"
+    ]
 }

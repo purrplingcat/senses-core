@@ -2,8 +2,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 "use strict";
 if (require.main === module) {
-    const runtime = require("../runtime/node-app");
-    const manifest = require("../manifest.json");
-
-    runtime(manifest);
+    require("../runtime/node-app")(require.resolve("../manifest.json"));
 }

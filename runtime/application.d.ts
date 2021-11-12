@@ -10,6 +10,12 @@ declare namespace NodeApplication {
         runnerVersion: string;
         entry: string;
         rootDir: string;
+        node: string;
+        resolve: {
+            root(dir?: string): string;
+            addAlias(name: string, dirs: string | string[]);
+            addAliases(aliases: Record<string, string | string[]>);
+        };
     }
 
     export interface AppManifest {

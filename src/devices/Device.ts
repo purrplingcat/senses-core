@@ -1,4 +1,4 @@
-import "reflect-metadata";
+//import "reflect-metadata";
 import consola, { Consola } from "consola";
 import Entity, { UniqueIdentity } from "~core/Entity";
 import Handshake, { decodeDeviceType } from "~core/Handshake";

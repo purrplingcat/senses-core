@@ -2,19 +2,20 @@
 const path = require("path");
 const scope = {
     runner: "node-app",
-    runnerVersion: "1.1.0",
+    runnerVersion: "1.2.0",
     browser: typeof window === "object",
-    node: typeof process === "object" && typeof process.versions === "object" && process.versions.node != null,
+    node: typeof process === "object" && process.versions?.node,
+    instance: null,
+    rootDir: "",
+    entry: null,
+    manifest: {},
+    resolve: null,
 };
+
+if (!scope.node) throw new Error("This application can be run only under NodeJS");
 
 global.NODE_APP = true;
 global.application = scope;
-
-require("./polyfills");
-
-function loadAssembly(entrypoint) {
-    return require(path.join(process.cwd(), entrypoint));
-}
 
 function execute(app) {
     if (typeof app.errorHandler === "function") {
@@ -25,30 +26,39 @@ function execute(app) {
     app.default.call(app, process.argv.slice(1), process.env);
 }
 
-function runtime(manifest, entry = null) {
-    if (typeof manifest !== "object") {
-        throw new Error("Invalid application manifest");
-    }
+function requirePolyfill(p, root) {
+    return require(p.startsWith("./") || p.startsWith("../") ? path.resolve(root, p) : p);
+}
 
+/**
+ * Creates application runtime and executes their main function
+ * @param {string} manifestFile Path to application manifest
+ * @param {string|null} entry Path to applicaton entry file with the main function
+ */
+function runtime(manifestFile, entry = null) {
     if (scope.instance) {
         throw new Error("An application is already running");
     }
 
-    const root = manifest.root || "";
+    manifestFile = require.resolve(manifestFile);
+    const manifest = require(manifestFile);
+    const root = path.dirname(path.resolve(manifestFile));
     const entryFile = entry || manifest.entry || manifest.main || "app.js";
+
     const moduleResolve = require("./module-resolve");
-    moduleResolve.addAlias("~~", process.cwd());
-    moduleResolve.addAlias("~", root || path.dirname(entryFile));
-    moduleResolve.addAlias("@runtime", __dirname);
+    moduleResolve.root(root);
     moduleResolve.addAliases(manifest.resolve || {});
 
-    const app = loadAssembly(path.join(root, entryFile));
+    const polyfills = manifest.polyfills || [];
+    polyfills.forEach((p) => requirePolyfill(p, root));
 
+    const app = require(path.resolve(root, entryFile));
     if (typeof app.default !== "function") {
         throw new Error(`Application ${manifest.name} is not runnable`);
     }
 
-    scope.rootDir = root || path.dirname(entryFile);
+    scope.resolve = moduleResolve;
+    scope.rootDir = root;
     scope.entry = entryFile;
     scope.manifest = manifest;
     scope.instance = app;
