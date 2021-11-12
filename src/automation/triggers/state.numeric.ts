@@ -1,8 +1,9 @@
 import parseDuration from "parse-duration";
 import { ISenses } from "~core/Senses";
-import { arrayOf, arrayOfOrNull } from "~core/utils";
+import { arrayOfOrNull, fetchUids } from "~core/utils";
 import consola from "consola";
 import { Trigger } from "~automation/Automation";
+import { between } from "~automation/utils";
 
 export type NumericStateTriggerOptions = {
     device: string | string[] | object;
@@ -11,18 +12,6 @@ export type NumericStateTriggerOptions = {
     below?: number;
     for?: number | string;
 };
-
-function fetchUids(query: string | string[] | object, senses: ISenses): string[] {
-    if (typeof query === "object" && !Array.isArray(query)) {
-        return senses.devices.query(query).map((d) => d.uid);
-    }
-
-    return arrayOf(query);
-}
-
-function between(val: number, min: number, max: number) {
-    return val > min && val < max;
-}
 
 export default function createStateTrigger(senses: ISenses, options: NumericStateTriggerOptions): Trigger {
     return function stateNumeric(trap: () => Promise<void>): void {

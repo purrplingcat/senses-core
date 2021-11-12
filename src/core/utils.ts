@@ -1,4 +1,5 @@
 import { YAMLSeq, YAMLMap } from "yaml/types";
+import { ISenses } from "./Senses";
 
 export type PureOptions = {
     nulls?: boolean;
@@ -171,4 +172,14 @@ export function parseBoolean(value: unknown): boolean {
     }
 
     throw new Error(`Invalid boolean value: `);
+}
+
+export function fetchUids(query: string | string[] | object | object[], senses: ISenses): string[] {
+    return arrayOf(query).flatMap((q) => {
+        if (typeof q === "object") {
+            return senses.devices.query(q).map((d) => d.uid);
+        }
+
+        return q;
+    });
 }

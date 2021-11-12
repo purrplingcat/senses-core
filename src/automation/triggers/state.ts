@@ -1,7 +1,7 @@
 import parseDuration from "parse-duration";
 import { equal } from "fast-shallow-equal";
 import { ISenses } from "~core/Senses";
-import { arrayOf, arrayOfOrNull } from "~core/utils";
+import { arrayOf, arrayOfOrNull, fetchUids } from "~core/utils";
 import consola from "consola";
 import { Trigger } from "~automation/Automation";
 
@@ -12,14 +12,6 @@ export type StateTriggerOptions = {
     attribute?: string | string[];
     for?: number | string;
 };
-
-function fetchUids(query: string | string[] | object, senses: ISenses): string[] {
-    if (typeof query === "object" && !Array.isArray(query)) {
-        return senses.devices.query(query).map((d) => d.uid);
-    }
-
-    return arrayOf(query);
-}
 
 export default function createStateTrigger(senses: ISenses, options: StateTriggerOptions): Trigger {
     return function state(trap: () => Promise<void>): void {

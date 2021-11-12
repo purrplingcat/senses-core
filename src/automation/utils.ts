@@ -10,6 +10,10 @@ function pick(events: string[]) {
 
 export type SunTimes = suncalc.GetTimesResult & { midnight: Date };
 
+export function between(val: number, min: number, max: number): boolean {
+    return val > min && val < max;
+}
+
 export async function loadFactory(p: string, factoryName: string): Promise<any> {
     if (factoryName.startsWith(".")) {
         throw Error("Illegal factory name");
