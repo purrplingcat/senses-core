@@ -54,7 +54,7 @@ function runtime(manifestFile, entry = null) {
 
     const app = require(path.resolve(root, entryFile));
     if (typeof app.default !== "function") {
-        throw new Error(`Application ${manifest.name} is not runnable`);
+        throw new Error(`Application '${manifest.name}' (${entryFile}) is not executable`);
     }
 
     scope.resolve = moduleResolve;
@@ -64,6 +64,13 @@ function runtime(manifestFile, entry = null) {
     scope.instance = app;
 
     execute(app);
+}
+
+if (require.main === module) {
+    const argv = [...process.argv];
+    process.argv = [argv[0], argv[1], ...argv.slice(4)];
+
+    runtime(path.resolve(argv[2]), argv[3] !== "-" && argv[3]);
 }
 
 module.exports = runtime;

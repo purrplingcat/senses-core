@@ -25,7 +25,7 @@ routes.post("/:serviceName", async (req, res) => {
             service: req.params.serviceName,
             result,
         });
-    } catch (err) {
+    } catch (err: any) {
         res.status(500).json({ error: true, message: err.message });
         consolaGlobalInstance.error(err);
     }
