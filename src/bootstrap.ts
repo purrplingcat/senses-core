@@ -2,10 +2,20 @@ import consola from "consola";
 import fs from "fs";
 import mqtt, { IClientOptions } from "mqtt";
 import yaml from "yaml";
+import Component from "~core/Component";
 import { Senses } from "~core/Senses";
 import { loadComponents } from "~loader";
+import { getIn } from "~utils";
 
-const components = ["~http", "~devices", "~room", "~exposed", "~scene", "~automation"];
+const components = [
+    new Component("~http"),
+    new Component("~graphql"),
+    new Component("~devices"),
+    new Component("~room"),
+    new Component("~exposed"),
+    new Component("~scene"),
+    new Component("~automation"),
+];
 
 type ISecureClientOptions = {
     caFile?: string;
@@ -41,10 +51,10 @@ export async function setupSenses(configFile: string, debug: boolean): Promise<S
     if (debug) consola.info("Running in debug mode");
     consola.info(`Parsing configuration file: ${configFile} ...`);
 
-    const config = yaml.parseDocument(fs.readFileSync(configFile).toString());
-    const domain = config.get("domain") || process.env.HOSTNAME || "localhost";
-    const name = config.get("name") || process.env.SENSES_NAME || "Senses Home";
-    const mqtt = createMqttClient(config.getIn(["mqtt", "brokerUrl"]), config.getIn(["mqtt", "options"])?.toJSON());
+    const config = yaml.parseDocument(fs.readFileSync(configFile).toString()).toJSON();
+    const domain = config.domain || process.env.HOSTNAME || "localhost";
+    const name = config.name || process.env.SENSES_NAME || "Senses Home";
+    const mqtt = createMqttClient(getIn(config, ["mqtt", "brokerUrl"], String), getIn(config, ["mqtt", "options"]));
     const senses = new Senses(mqtt, domain, name, debug);
 
     await loadComponents(components, senses, config);

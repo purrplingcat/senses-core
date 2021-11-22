@@ -1,6 +1,5 @@
 import consola from "consola";
 import { ISenses } from "~core/Senses";
-import { YAMLMap } from "yaml/types";
 import Handshake, { decodeDeviceType } from "~core/Handshake";
 import BaseDevice from "~devices/BaseDevice";
 import { asArray } from "~utils";
@@ -8,16 +7,18 @@ import { registerNewDevice, updateDeviceInfo } from "~utils/devices";
 
 export const name = "device";
 
-export function setup(senses: ISenses, config: YAMLMap): void {
-    if (config.get("discovery") === true) {
+export default function setup(senses: ISenses, config: Record<any, any>): void {
+    config = config.device ?? {};
+
+    if (config.discovery === true) {
         senses.eventbus.on("discovery.handshake", (shake) => setupDeviceFromMqttHandshake(senses, shake));
     }
 
-    const devicesConf: YAMLMap[] = config.get("devices")?.items?.filter((d: unknown) => d instanceof YAMLMap);
+    const devicesConf: any[] = config.devices?.filter((d: unknown) => typeof d === "object");
     if (devicesConf && Array.isArray(devicesConf)) {
         senses.eventbus.on("start", () => {
             devicesConf.forEach((dConf) => {
-                setupDeviceFromConfig(senses, dConf.get("type"), dConf);
+                setupDeviceFromConfig(senses, dConf.type, dConf);
             });
         });
     }
@@ -65,54 +66,52 @@ function setupDeviceFromMqttHandshake(senses: ISenses, shake: Handshake): void {
     }
 }
 
-function setupDeviceFromConfig(senses: ISenses, platform: string, config: YAMLMap) {
-    if (!config.has("name")) {
+function setupDeviceFromConfig(senses: ISenses, platform: string, config: Record<any, any>) {
+    if (!config.name) {
         throw new Error("Missing device name");
     }
 
-    const keepalive = config.get("keepalive")?.toJSON();
-    const type = decodeDeviceType(
-        config.has("class") ? `device/${platform}, ${config.get("class")}` : `device/${platform}`,
-    );
-    const uid = `${platform}${config.has("room") ? `-${config.get("room")}` : ""}-${config.get("name")}`;
+    const keepalive = config.keepalive;
+    const type = decodeDeviceType(config.class ? `device/${platform}, ${config.class}` : `device/${platform}`);
+    const uid = `${platform}${config.room ? `-${config.room}` : ""}-${config.name}`;
     const shake: Handshake = {
         _version: "1.0",
-        uid: config.get("uid") ?? uid,
+        uid: config.uid ?? uid,
         available: true,
         keepalive: Boolean(keepalive),
         keepaliveTimeout: keepalive?.timeout ?? 0,
-        name: config.get("title") || config.get("name"),
-        alias: config.get("name"),
-        product: config.get("product") ?? "",
-        vendor: config.get("vendor") ?? "",
-        location: config.get("room"),
-        description: config.get("description"),
-        stateFormat: config.get("format") || "json",
-        platform: config.get("platform"),
-        tags: asArray<string>(config.get("tags")),
-        via: config.get("via"),
-        groups: config.get("groups"),
+        name: config.title || config.name,
+        alias: config.name,
+        product: config.product ?? "",
+        vendor: config.vendor ?? "",
+        location: config.room,
+        description: config.description,
+        stateFormat: config.format || "json",
+        platform: config.platform,
+        tags: asArray<string>(config.tags),
+        via: config.via,
+        groups: config.groups,
         comm: [
-            { topic: config.get("stateTopic"), type: "state" },
-            { topic: config.get("setTopic"), type: "set" },
-            { topic: config.get("getTopic"), type: "fetch" },
+            { topic: config.stateTopic, type: "state" },
+            { topic: config.setTopic, type: "set" },
+            { topic: config.getTopic, type: "fetch" },
         ],
-        features: asArray(config.get("features")),
+        features: asArray(config.features),
         type: type.fullQualifiedType,
         additional: {
-            fields: config.get("fields")?.toJSON(),
-            mainField: config.get("mainField"),
-            incremental: config.get("incremental"),
-            schema: config.get("schema") || "",
+            fields: config.getfields,
+            mainField: config.mainField,
+            incremental: config.incremental,
+            schema: config.schema || "",
             availabilityTags: asArray(keepalive?.tags),
         },
     };
 
     const device = registerNewDevice(senses, shake, type);
 
-    device.subscribers = config.get("subscriber")?.toJSON() || [];
-    device.publishers = config.get("publisher")?.toJSON() || [];
-    device.polls = config.get("poll")?.toJSON() || [];
+    device.subscribers = config.subscriber || [];
+    device.publishers = config.publisher || [];
+    device.polls = config.poll || [];
 
     if (senses.mqtt.connected) {
         device.subscribeTopics().catch((err) => consola.warn(`${device.uid}:`, err));

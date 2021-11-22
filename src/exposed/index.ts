@@ -6,7 +6,7 @@ import consola from "consola";
 export const name = "expose";
 export const domain = name;
 
-export function setup(senses: ISenses): void {
+export default function setup(senses: ISenses): void {
     senses.eventbus.on("mqtt.connect", (mqtt) => {
         if (senses.mqtt == null) return;
 

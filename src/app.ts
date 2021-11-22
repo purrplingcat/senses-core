@@ -13,10 +13,7 @@ export default async function run(argv: string[], env: NodeJS.ProcessEnv): Promi
         `Senses home assistant ${application.manifest.version} at ${application.runner} ${application.runnerVersion}, node ${process.version}+${process.platform}-${process.arch}`,
     );
     consola.level = debug ? LogLevel.Debug : LogLevel.Info;
-
-    if (env.LOG_TRACE) {
-        consola.level = LogLevel.Trace;
-    }
+    consola.level = env.LOG_LEVEL ? Number(env.LOG_LEVEL) : consola.level;
 
     const configFile = argv[1] || env.CONFIG_FILE || process.cwd() + "/config/config.yaml";
     const senses = await setupSenses(configFile, debug);

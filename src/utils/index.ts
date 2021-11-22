@@ -144,10 +144,17 @@ export function omit<T extends object, K extends keyof T>(obj: T, toOmit: K[]): 
     return omited as Omit<T, K>;
 }
 
+export function getIn<T>(o: any, path: string | string[], cast: (raw: any) => T): T;
+export function getIn<T>(o: any, path: string | string[]): T | undefined;
+
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function getIn<T>(o: any, path: string[], cast?: (raw: any) => T): T | undefined | null {
+export function getIn<T>(o: any, path: string | string[], cast?: (raw: any) => T): T | undefined {
     let current = o;
     let key;
+
+    if (!Array.isArray(path)) {
+        path = path.split(".");
+    }
 
     while ((key = path.shift())) {
         current = current[key];

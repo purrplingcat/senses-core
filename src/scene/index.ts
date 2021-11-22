@@ -1,4 +1,3 @@
-import { YAMLMap, YAMLSeq } from "yaml/types";
 import Entity, { UniqueIdentity } from "~core/Entity";
 import { ISenses } from "~core/Senses";
 
@@ -11,29 +10,27 @@ export interface IScene extends Entity, UniqueIdentity {
     room: string | null;
 }
 
-export function setup(senses: ISenses, config: YAMLSeq): void {
-    const scenesConfig = config.items?.filter((d: unknown) => d instanceof YAMLMap);
+export default function setup(senses: ISenses, config: Record<any, any>): void {
+    const scenesConfig = config.scene;
 
     if (scenesConfig && Array.isArray(scenesConfig)) {
         for (const sceneConfig of scenesConfig) {
-            if (sceneConfig instanceof YAMLMap) {
-                senses.scenes.scenes.push(setupScene(senses, sceneConfig));
-            }
+            senses.scenes.scenes.push(setupScene(senses, sceneConfig));
         }
     }
 }
 
-function setupScene(senses: ISenses, config: YAMLMap): IScene {
-    const room = config.get("room") || null;
+function setupScene(senses: ISenses, config: Record<string, string | number | boolean>): IScene {
+    const room = <string>config.room || null;
 
     return {
         available: true,
-        name: config.get("name"),
-        topic: config.get("topic") || `${senses.domain}/$senses/scene${room ? "/" + room : ""}`,
+        name: <string>config.name,
+        topic: <string>config.topic || `${senses.domain}/$senses/scene${room ? "/" + room : ""}`,
         type: "scene",
-        uid: config.get("uid") || `scene-${room ? room + "-" : ""}${config.get("name")}`,
-        icon: config.get("icon"),
-        title: config.get("title") ?? config.get("name"),
+        uid: <string>config.uid || `scene-${room ? room + "-" : ""}${config.name}`,
+        icon: <string>config.icon,
+        title: <string>config.title ?? <string>config.name,
         room,
     };
 }

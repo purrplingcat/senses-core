@@ -1,9 +1,7 @@
-import { gql } from "apollo-server-express";
+import { createModule, gql } from "graphql-modules";
+import Device from "./Device";
 
-export default gql`
-    scalar Date
-    scalar JSON
-
+const typeDefs = gql`
     enum TurnState {
         on
         off
@@ -42,14 +40,6 @@ export default gql`
         via: ID
     }
 
-    type Room {
-        name: String!
-        title: String
-        icon: String
-        description: String
-        deviceCount: Int
-    }
-
     type Group {
         name: String!
         title: String
@@ -57,33 +47,9 @@ export default gql`
         type: String!
     }
 
-    type Scene {
-        uid: String!
-        name: String!
-        room: String
-        icon: String
-        title: String
-    }
-
-    type TopicProvider {
-        topic: String
-        name: String
-        format: String
-    }
-
-    type Topics {
-        subscribers: [TopicProvider]
-        publishers: [TopicProvider]
-        polls: [String]
-    }
-
     type Query {
         devices(filter: JSON): [Device]
         device(uid: ID!): Device!
-        rooms(filter: JSON): [Room]
-        room(name: String!): Room!
-        topics(deviceUid: ID!): Topics!
-        scenes: [Scene]
     }
 
     type Mutation {
@@ -94,3 +60,27 @@ export default gql`
         deviceUpdated: Device
     }
 `;
+
+export default createModule({
+    id: "device",
+    typeDefs,
+    dirname: __dirname,
+    resolvers: {
+        Query: {
+            device: (_: never, args: any, context: any) => {
+                return null;
+                return context.senses.devices.find((d: Device) => d.uid === args.uid);
+            },
+            devices: (_: never, args: any, context: any) => {
+                const shouldBeFiltered = Boolean(args.filter);
+                let devices = context.senses.devices;
+
+                if (shouldBeFiltered) {
+                    devices = devices.query(args.filter);
+                }
+
+                return devices;
+            },
+        },
+    },
+});

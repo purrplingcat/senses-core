@@ -11,7 +11,7 @@ import Discovery from "./Discovery";
 import Entity from "./Entity";
 import EventBus from "./EventBus";
 import Handshake from "./Handshake";
-import { Component } from "~loader";
+import Component from "./Component";
 import IService from "./Service";
 import StateMachine, { IStateMachine } from "./StateMachine";
 import { IRenderer, Renderer } from "./template";
@@ -42,6 +42,7 @@ export interface ISenses {
     getUid(): string;
     handshake(): void;
     ready(callback?: () => void): Promise<void>;
+    waitOn<T>(componentName: string): Promise<T>;
 }
 
 export class Senses implements ISenses {
@@ -109,6 +110,22 @@ export class Senses implements ISenses {
             }
 
             this.eventbus.once("start", onStart);
+        });
+    }
+
+    waitOn<T>(componentName: string): Promise<T> {
+        return new Promise((resolve, reject) => {
+            const component = this.components.find((c) => c.name === componentName);
+
+            if (!component) {
+                return reject(new Error(`Unknown component: ${componentName}`));
+            }
+
+            if (component.isLoaded) {
+                return resolve(component.exports as unknown as T);
+            }
+
+            component.once("loaded", () => resolve(component.exports as unknown as T));
         });
     }
 

@@ -1,5 +1,4 @@
-import consolaGlobalInstance from "consola";
-import { YAMLSeq } from "yaml/types";
+import consola from "consola";
 import { ISenses } from "~core/Senses";
 import { arrayOf } from "~utils";
 import Automation, { Action, Condition, Trigger } from "./Automation";
@@ -49,8 +48,8 @@ async function createAutomation(config: AutomationConfig, senses: ISenses): Prom
     return automation;
 }
 
-export function setup(senses: ISenses, config: YAMLSeq): void {
-    const automations: AutomationConfig[] = config.toJSON();
+export default function setup(senses: ISenses, config: Record<string, any>): void {
+    const automations: AutomationConfig[] = config.automation;
 
     if (!Array.isArray(automations)) {
         throw new Error(`Automations config: Expected array, but got ${typeof automations}`);
@@ -65,6 +64,6 @@ export function setup(senses: ISenses, config: YAMLSeq): void {
             automationRegistry.push(await createAutomation(automation, senses));
         }
 
-        consolaGlobalInstance.info(`Initialized ${automationRegistry.length} automations`);
+        consola.info(`Initialized ${automationRegistry.length} automations`);
     });
 }

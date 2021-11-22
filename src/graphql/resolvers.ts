@@ -60,21 +60,6 @@ export function createMutationResolvers(senses: ISenses): Record<string, (parent
 
 export default function createQueryResolvers(senses: ISenses): Record<string, (parent: any, args: any) => unknown> {
     return {
-        device: (_, args) => {
-            const device = senses.devices.find((d) => d.uid === args.uid);
-
-            return device ? deviceMapper.call(senses, device) : null;
-        },
-        devices: (_, args) => {
-            const shouldBeFiltered = Boolean(args.filter);
-            let devices = senses.devices.map(deviceMapper.bind(senses));
-
-            if (shouldBeFiltered) {
-                devices = devices.query(args.filter);
-            }
-
-            return devices;
-        },
         room: (_, args) => {
             const room = senses.rooms.find((r) => r.name === args.name);
 
