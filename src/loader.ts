@@ -13,8 +13,19 @@ function load(component: Component, senses: ISenses, config: unknown) {
 }
 
 export async function loadComponents(components: Component[], senses: ISenses, config: unknown): Promise<void> {
-    consola.info("Loading components ...");
+    consola.info(`Loading ${components.length} components ...`);
     senses.components = components;
-    await Promise.all(components.map((c) => load(c, senses, config)));
-    consola.success(`Loaded ${senses.components.filter((c) => c.isLoaded).length} components`);
+
+    for (const [key, component] of components.entries()) {
+        const startTime = process.hrtime();
+        await load(component, senses, config);
+        const endTime = process.hrtime(startTime);
+        consola.ready(
+            `Loaded component [${key + 1}/${components.length}]: ${component.name} (${component.source}) in ${
+                endTime[0]
+            }s ${Math.round(endTime[1] / 1000000)}ms`,
+        );
+    }
+
+    consola.success(`Loaded all ${senses.components.length} components`);
 }

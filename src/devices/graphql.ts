@@ -1,65 +1,17 @@
-import { createModule, gql } from "graphql-modules";
+import { createModule } from "graphql-modules";
+import typeDefs from "./schema";
 import Device from "./Device";
+import ITurnableDevice, { isTurnableDevice } from "./TurnableDevice";
+import { ContextSenses } from "~graphql/types";
+import { ISenses } from "~core/Senses";
+import { pubsub } from "~graphql";
+import { UserInputError } from "apollo-server-express";
 
-const typeDefs = gql`
-    enum TurnState {
-        on
-        off
-        unknown
-    }
-
-    type DeviceInfo {
-        product: String
-        vendor: String
-        model: String
-        serialNumber: String
-        revision: String
-    }
-
-    type Device {
-        uid: ID!
-        name: String
-        type: String
-        class: String
-        title: String
-        description: String
-        room: String
-        groups: [Group]
-        info: DeviceInfo
-        available: Boolean
-        lastAlive: Date
-        keepalive: Boolean
-        lastUpdate: Date
-        timeout: Int
-        turnable: Boolean
-        turn: TurnState
-        state: JSON
-        extraAttrs: JSON
-        features: [String]
-        tags: [String]
-        via: ID
-    }
-
-    type Group {
-        name: String!
-        title: String
-        description: String
-        type: String!
-    }
-
-    type Query {
-        devices(filter: JSON): [Device]
-        device(uid: ID!): Device!
-    }
-
-    type Mutation {
-        setState(deviceUid: String!, newState: JSON!): Boolean
-    }
-
-    type Subscription {
-        deviceUpdated: Device
-    }
-`;
+export function prepare(senses: ISenses): void {
+    senses.eventbus.on("device.updated", (device) => {
+        pubsub.publish("device.update", { deviceUpdated: device });
+    });
+}
 
 export default createModule({
     id: "device",
@@ -67,10 +19,7 @@ export default createModule({
     dirname: __dirname,
     resolvers: {
         Query: {
-            device: (_: never, args: any, context: any) => {
-                return null;
-                return context.senses.devices.find((d: Device) => d.uid === args.uid);
-            },
+            device: (_: never, args: any, context: ContextSenses) => context.senses.fetchDevice(args.uid),
             devices: (_: never, args: any, context: any) => {
                 const shouldBeFiltered = Boolean(args.filter);
                 let devices = context.senses.devices;
@@ -80,6 +29,31 @@ export default createModule({
                 }
 
                 return devices;
+            },
+        },
+        Device: {
+            state: (device: Device) => device.getState(),
+            turnable: (device: Device) => isTurnableDevice(device),
+            turn: (device: ITurnableDevice) => device.state,
+            extraAttrs: (device: Device) => device.getExtraAttrs(),
+            groups: (device: Device, args: never, { senses }: ContextSenses) =>
+                senses.groups.filter((g) => device.groups.includes(g.name)),
+        },
+        Mutation: {
+            setState: async (_: never, { deviceUid, newState }: any, context: ContextSenses) => {
+                const device = context.senses.devices.find((d) => d.uid === deviceUid);
+
+                if (!device) {
+                    throw new UserInputError("Device not found", { code: 404 });
+                }
+
+                return await device.setState(newState);
+            },
+        },
+        Subscription: {
+            deviceUpdated: {
+                subscribe: (_: never, args: never, context: ContextSenses) =>
+                    context.pubsub.asyncIterator(["device.update"]),
             },
         },
     },

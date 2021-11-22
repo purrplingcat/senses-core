@@ -99,7 +99,7 @@ function setupDeviceFromConfig(senses: ISenses, platform: string, config: Record
         features: asArray(config.features),
         type: type.fullQualifiedType,
         additional: {
-            fields: config.getfields,
+            fields: config.fields,
             mainField: config.mainField,
             incremental: config.incremental,
             schema: config.schema || "",

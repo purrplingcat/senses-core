@@ -8,13 +8,13 @@ import { loadComponents } from "~loader";
 import { getIn } from "~utils";
 
 const components = [
-    new Component("~http"),
-    new Component("~graphql"),
-    new Component("~devices"),
-    new Component("~room"),
-    new Component("~exposed"),
-    new Component("~scene"),
-    new Component("~automation"),
+    new Component("~http", "http"),
+    new Component("~graphql", "graphql"),
+    new Component("~devices", "device"),
+    new Component("~room", "room"),
+    new Component("~exposed", "exposed"),
+    new Component("~scene", "scene"),
+    new Component("~automation", "automation"),
 ];
 
 type ISecureClientOptions = {

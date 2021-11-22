@@ -1,37 +1,7 @@
 import { ApolloError, UserInputError } from "apollo-server-express";
 import { ISenses } from "../core/Senses";
 import BaseDevice from "../devices/BaseDevice";
-import Device from "../devices/Device";
 import { IRoom } from "../devices/Room";
-import { isTurnableDevice } from "../devices/TurnableDevice";
-
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function deviceMapper(this: ISenses, device: Device) {
-    return {
-        uid: device.uid,
-        entityId: device.entityId,
-        name: device.name,
-        type: device.type,
-        class: device.class,
-        title: device.title,
-        description: device.description,
-        info: device.info,
-        room: device.room,
-        groups: this.groups.filter((g) => device.groups.includes(g.name)),
-        available: device.available,
-        lastAlive: device.lastAlive,
-        keepalive: device.keepalive,
-        lastUpdate: device.lastUpdate,
-        timeout: device.timeout,
-        turnable: isTurnableDevice(device),
-        turn: isTurnableDevice(device) ? device.state : null,
-        extraAttrs: device.getExtraAttrs(),
-        state: device.getState(),
-        features: device.features,
-        tags: device.tags,
-        via: device.via,
-    };
-}
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function roomMapper(room: IRoom) {
