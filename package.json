@@ -10,6 +10,7 @@
   "scripts": {
     "clean": "rimraf dist lib .build *.tsbuildinfo",
     "dev": "tsc --sourceMap && NODE_OPTIONS=--enable-source-maps bin/senses",
+    "start": "bin/senses",
     "build": "tsc",
     "build:dist": "tools/build-dist.sh",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet",
@@ -33,7 +34,6 @@
     "typescript": "^4.4.4"
   },
   "dependencies": {
-    "@bmd-studio/graphql-mqtt-subscriptions": "^1.4.2",
     "apollo-server-express": "^2.25.3",
     "consola": "^2.15.3",
     "cors": "^2.8.5",
@@ -52,7 +52,6 @@
     "query": "protobi/query",
     "reflect-metadata": "^0.1.13",
     "suncalc": "^1.8.0",
-    "yaml": "^1.10.2",
-    "yarn": "^1.22.11"
+    "yaml": "^1.10.2"
   }
 }
