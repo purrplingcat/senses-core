@@ -1,0 +1,27 @@
+enum HeatState {
+    heating
+    standby
+    off
+}
+
+type Climate {
+    heat: HeatState
+    temperature: Float
+    targetTemperature: Float
+}
+
+type Room {
+    name: String!
+    entityId: String!
+    title: String
+    icon: String
+    description: String
+    deviceCount: Int
+    climate: Climate!
+    lightsOn: Boolean
+}
+
+extend type Query {
+    rooms(filter: JSON): [Room]
+    room(name: String!): Room!
+}

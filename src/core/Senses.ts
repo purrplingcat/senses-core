@@ -150,12 +150,16 @@ export class Senses implements ISenses {
         return result;
     }
 
+    fetchAllDevices(): Device[] {
+        return this.getEntities().filter<Device>(Device.isDevice);
+    }
+
     hasDevice(uidOrEntityId: string): boolean {
-        return this.devices.find((d) => d.uid === uidOrEntityId || d.entityId === uidOrEntityId) != null;
+        return this.fetchAllDevices().some((d) => d.uid === uidOrEntityId || d.entityId === uidOrEntityId);
     }
 
     fetchDevice(uidOrEntityId: string): Device {
-        const device = this.devices.find((d) => d.uid === uidOrEntityId || d.entityId === uidOrEntityId);
+        const device = this.fetchAllDevices().find((d) => d.uid === uidOrEntityId || d.entityId === uidOrEntityId);
 
         if (!device) {
             throw new Error(`Device '${uidOrEntityId}' not found`);

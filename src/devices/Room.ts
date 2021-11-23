@@ -8,6 +8,12 @@ export interface IRoom extends Entity {
     devices: Device[];
 }
 
+export interface IClimate {
+    temperature: number | null;
+    heat: "heating" | "standby" | "off" | null;
+    targetTemperature: number | null;
+}
+
 export default class Room extends Device implements IRoom {
     icon?: string;
     available: boolean;
@@ -23,6 +29,29 @@ export default class Room extends Device implements IRoom {
 
     get devices(): Device[] {
         return this.senses.devices.filter((d) => d.room === this.name);
+    }
+
+    get climate(): IClimate {
+        const config = this.config?.climate ?? {};
+
+        return {
+            temperature: config.temperature ? Number(this._renderTemplate(config.temperature)) : null,
+            heat: config.heat ? <any>this._renderTemplate(config.heat) : null,
+            targetTemperature: config.targetTemperature ? Number(this._renderTemplate(config.targetTemperature)) : null,
+        };
+    }
+
+    private _renderTemplate(template: string): string {
+        return this.senses.renderer.render(template, {
+            room: this,
+        });
+    }
+
+    override setup(config: IRoom): void {
+        super.setup(config);
+
+        this.description = config.description;
+        this.icon = config.icon;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -17,6 +17,7 @@ export interface DeviceInfo {
     driver?: string;
 }
 
+@Reflect.metadata(Symbol.for("device"), true)
 export default abstract class Device<TState extends {} = {}> implements Entity, UniqueIdentity {
     title?: string;
     name = "";
@@ -34,12 +35,14 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
     via?: string;
     description?: string;
     attributes: Record<string, unknown>;
+    config: any;
     readonly senses: ISenses;
 
     constructor(senses: ISenses) {
         this.senses = senses;
         this.attributes = {};
         this.info = {};
+        this.config = null;
     }
 
     abstract setState(state: Partial<TState>): Promise<boolean> | boolean;
@@ -85,6 +88,10 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
         };
     }
 
+    public setup(config: unknown): void {
+        this.config = config;
+    }
+
     public updateFromShake(shake: Handshake): void {
         const type = decodeDeviceType(shake.type);
 
@@ -115,5 +122,9 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
         this.tags = shake.tags || [];
         this.via = shake.via;
         this.attributes = toObject(shake.additional || this.attributes);
+    }
+
+    static isDevice(obj: Entity): obj is Device {
+        return Reflect.getMetadata(Symbol.for("device"), Reflect.getConstructorOf(obj));
     }
 }

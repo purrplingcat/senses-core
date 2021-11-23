@@ -89,6 +89,9 @@ room:
   - name: kitchen
     title: Kuchyně
     icon: rooms/kitchen
+    climate:
+      temperature: '{{ stateOf("sensor-kitchen-temperature", "temperature") }}'
+      heat: standby
   - name: bathroom
     title: Koupelna
     icon: rooms/bath

@@ -6,4 +6,6 @@ interface Array<T> {
 
 namespace Reflect {
     function getPropertyNames(o: unknown): string[];
+    function getAllMetadata(metadatakey: any, target: Object);
+    function getConstructorOf(o: unknown): Function;
 }

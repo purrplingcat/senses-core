@@ -20,3 +20,23 @@ if (typeof Reflect.getPropertyNames !== "function") {
         return Array.from(new Set(props)).sort();
     };
 }
+
+if (typeof Reflect.getAllMetadata !== "function") {
+    Reflect.getAllMetadata = function (key, target) {
+        const metadata = [];
+        let proto = target;
+
+        do {
+            if (!Reflect.hasOwnMetadata(key, proto)) continue;
+            metadata.push(Reflect.getOwnMetadata(key, proto));
+        } while ((proto = Reflect.getPrototypeOf(proto)));
+
+        return metadata;
+    };
+}
+
+if (typeof Reflect.getConstructorOf !== "function") {
+    Reflect.getConstructorOf = function (o) {
+        return o?.constructor;
+    };
+}

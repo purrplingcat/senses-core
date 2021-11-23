@@ -1,11 +1,13 @@
 import { createModule } from "graphql-modules";
-import typeDefs from "./schema";
+import path from "path";
 import { ContextSenses } from "~graphql/types";
 import { IRoom } from "~devices/Room";
+import { loadSchema } from "~graphql/tools";
+import { isTurnableDevice } from "~devices/TurnableDevice";
 
 export default createModule({
     id: "room",
-    typeDefs,
+    typeDefs: loadSchema(path.join(application.rootDir, "graphql/room.gql")),
     dirname: __dirname,
     resolvers: {
         Query: {
@@ -15,6 +17,8 @@ export default createModule({
         },
         Room: {
             deviceCount: (room: IRoom) => room.devices.length,
+            lightsOn: (room: IRoom) =>
+                room.devices.some((d) => d.type === "light" && isTurnableDevice(d) && d.state === "on"),
         },
     },
 });

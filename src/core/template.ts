@@ -18,6 +18,10 @@ export class Renderer implements IRenderer {
     private _putArgs(args: object): object {
         return {
             senses: this._senses,
+            stateOf: (deviceUid: string, attr: string) => {
+                if (!this._senses.hasDevice(deviceUid)) return;
+                return (<any>this._senses.fetchDevice(deviceUid).getState())[attr];
+            },
             ...args,
         };
     }

@@ -1,7 +1,7 @@
 import Handshake from "../../core/Handshake";
 import { ISenses } from "../../core/Senses";
 import BaseDevice, { DeviceState } from "../../devices/BaseDevice";
-import { extraAttr } from "../../devices/metadata";
+import { extraAttr } from "~devices/metadata";
 import { Payload } from "../../types/senses";
 
 export interface SensorState extends DeviceState {

@@ -5,8 +5,9 @@ export const name = "room";
 
 function createRoom(senses: ISenses, dirtyRoom: IRoom): Room {
     const room = new Room(dirtyRoom.name, senses);
+    room.setup(dirtyRoom); // configuration
 
-    return Object.assign(room, dirtyRoom);
+    return room;
 }
 
 export default function setup(senses: ISenses, config: Record<any, any>): void {
