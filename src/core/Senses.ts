@@ -169,7 +169,7 @@ export class Senses implements ISenses {
     }
 
     addDevice(device: Device): void {
-        if (device.uid && this.devices.find((d) => d.uid === device.uid)) {
+        if (this.devices.some((d) => d.uid === device.uid)) {
             throw new Error(`Device with uid ${device.uid} already exists`);
         }
 
@@ -294,3 +294,5 @@ export class Senses implements ISenses {
         this.eventbus.emit("update");
     }
 }
+
+export const getAllDevices = (senses: ISenses): Device[] => (senses instanceof Senses ? senses.fetchAllDevices() : []);

@@ -1,5 +1,6 @@
 import { Action } from "~automation/Automation";
-import { ISenses } from "~core/Senses";
+import { getAllDevices, ISenses } from "~core/Senses";
+import { byUids, fetchUids } from "~utils/query";
 
 export type SetStateActionOptions = {
     device: string | string[] | object;
@@ -8,18 +9,12 @@ export type SetStateActionOptions = {
 };
 
 export default function createSetStateAction(senses: ISenses, options: SetStateActionOptions): Action {
-    let query = options.device ?? {};
-
-    if (Array.isArray(options.device)) {
-        query = { uid: { $in: options.device } };
-    } else if (typeof options.device === "string") {
-        query = { uid: options.device };
-    }
+    const uids = fetchUids(options.device ?? {}, senses);
 
     return function setState() {
         const payload = options.payload ?? {};
 
-        for (const device of senses.devices.query(query)) {
+        for (const device of getAllDevices(senses).filter(byUids(uids))) {
             device.setState(payload);
         }
     };

@@ -14,6 +14,7 @@ export interface IClimate {
     targetTemperature: number | null;
 }
 
+@Reflect.metadata("kind", "room")
 export default class Room extends Device implements IRoom {
     icon?: string;
     available: boolean;
@@ -50,6 +51,8 @@ export default class Room extends Device implements IRoom {
     override setup(config: IRoom): void {
         super.setup(config);
 
+        this.name = config.name;
+        this.title = config.title;
         this.description = config.description;
         this.icon = config.icon;
     }

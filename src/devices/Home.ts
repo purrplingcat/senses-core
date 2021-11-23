@@ -12,6 +12,7 @@ export interface HomeState {
 
 export const getHome = (senses: ISenses): Home => (<Senses>senses).home;
 
+@Reflect.metadata("kind", "home")
 export default class Home extends Device<HomeState> {
     private _state: Readonly<HomeState>;
     private _lastUpdate: Date;
@@ -42,7 +43,7 @@ export default class Home extends Device<HomeState> {
     }
 
     private _setup() {
-        this.name = this.senses.config?.domain || "home";
+        this.name = this.senses.name || "home";
         this.features = asArray(this.senses.config?.home?.features);
     }
 

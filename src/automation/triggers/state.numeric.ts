@@ -26,7 +26,7 @@ export default function createStateTrigger(senses: ISenses, options: NumericStat
                 ...new Set([...Object.keys(newState), ...Object.keys(oldState)]),
             ];
 
-            if (uids.length && !uids.includes(device.uid)) {
+            if (uids.length && !uids.some((id) => id === device.entityId || id === device.uid)) {
                 return;
             }
 

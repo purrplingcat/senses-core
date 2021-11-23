@@ -33,6 +33,7 @@ export interface DeviceState {
     _updatedAt: number;
 }
 
+@Reflect.metadata("kind", "device")
 export default abstract class BaseDevice<TState extends DeviceState = DeviceState> extends Device<TState> {
     subscribers: TopicRoute[];
     publishers: TopicRoute[];

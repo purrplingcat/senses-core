@@ -61,6 +61,10 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
         return id.toLowerCase().split(" ").join("");
     }
 
+    public get kind(): string {
+        return Device.getKind(this);
+    }
+
     protected get _logger(): Consola {
         return consola.withScope(this.entityId);
     }
@@ -126,5 +130,13 @@ export default abstract class Device<TState extends {} = {}> implements Entity, 
 
     static isDevice(obj: Entity): obj is Device {
         return Reflect.getMetadata(Symbol.for("device"), Reflect.getConstructorOf(obj));
+    }
+
+    static getKind(device: Device): string {
+        return Reflect.getMetadata("kind", Reflect.getConstructorOf(device)) ?? "";
+    }
+
+    static isKind(device: Device, kind: string): boolean {
+        return Device.getKind(device) === kind;
     }
 }
