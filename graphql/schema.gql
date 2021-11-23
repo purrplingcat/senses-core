@@ -1,0 +1,19 @@
+scalar Date
+scalar JSON
+
+type Service {
+    name: String!
+    description: String
+}
+
+type Query {
+    name: String!
+    version: String!
+    services: [Service]
+}
+
+type Mutation {
+    callService(name: String!, params: JSON): Boolean!
+}
+
+type Subscription

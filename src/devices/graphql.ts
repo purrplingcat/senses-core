@@ -1,11 +1,12 @@
 import { createModule } from "graphql-modules";
-import typeDefs from "./schema";
+import path from "path";
 import Device from "./Device";
 import ITurnableDevice, { isTurnableDevice } from "./TurnableDevice";
 import { ContextSenses } from "~graphql/types";
 import { ISenses } from "~core/Senses";
 import { pubsub } from "~graphql";
 import { UserInputError } from "apollo-server-express";
+import { loadSchema } from "~graphql/tools";
 
 export function prepare(senses: ISenses): void {
     senses.eventbus.on("device.updated", (device) => {
@@ -15,7 +16,7 @@ export function prepare(senses: ISenses): void {
 
 export default createModule({
     id: "device",
-    typeDefs,
+    typeDefs: loadSchema(path.join(application.rootDir, "graphql/device.gql")),
     dirname: __dirname,
     resolvers: {
         Query: {

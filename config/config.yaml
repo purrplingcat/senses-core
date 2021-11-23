@@ -103,7 +103,7 @@ scene:
   - name: night
     title: Noc
     icon: img/nightmoon
-  - name: kitchen_night
+  - name: night
     title: Noc
     room: kitchen
 

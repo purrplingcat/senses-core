@@ -8,7 +8,9 @@ import { extraAttrSymbol } from "./metadata";
 
 export interface DeviceInfo {
     product?: string;
+    productCode?: string;
     vendor?: string;
+    vendorId?: string;
     model?: string;
     serialNumber?: string;
     revision?: string;

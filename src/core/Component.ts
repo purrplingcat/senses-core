@@ -21,9 +21,30 @@ export default class Component extends EventEmitter {
         return this._loaded;
     }
 
+    hasOwnModule(subModulePath: string): boolean {
+        try {
+            require.resolve(path.join(this.source, subModulePath));
+            return true;
+        } catch (err: any) {
+            if (err.code === "MODULE_NOT_FOUND") {
+                return false;
+            }
+
+            throw err;
+        }
+    }
+
+    import(subModulePath?: string): Promise<any> {
+        return import(path.join(this.source, subModulePath ?? ""));
+    }
+
     async load(senses: ISenses, config: unknown): Promise<unknown> {
         consola.trace(`Start loading component ${this.name}`);
-        const module = await import(this.source);
+        if (this.isLoaded) {
+            throw new Error(`Component '${this.name}' (${this.source}) is already loaded.`);
+        }
+
+        const module = await this.import();
         consola.trace(`Import module ${this.source} of ${this.name} done`);
         const setup: (senses: ISenses, config: unknown) => unknown =
             typeof module.default === "function" ? module.default : module;

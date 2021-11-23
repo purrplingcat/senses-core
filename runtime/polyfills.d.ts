@@ -7,10 +7,3 @@ interface Array<T> {
 namespace Reflect {
     function getPropertyNames(o: unknown): string[];
 }
-
-declare module "*.gql" {
-    import { DocumentNode } from "graphql";
-    const Schema: DocumentNode;
-
-    export = Schema;
-}

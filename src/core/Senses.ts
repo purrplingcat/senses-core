@@ -42,7 +42,7 @@ export interface ISenses {
     getUid(): string;
     handshake(): void;
     ready(callback?: () => void): Promise<void>;
-    waitOn<T>(componentName: string): Promise<T>;
+    awaitComponent<T>(componentName: string): Promise<T>;
 }
 
 export class Senses implements ISenses {
@@ -113,7 +113,7 @@ export class Senses implements ISenses {
         });
     }
 
-    waitOn<T>(componentName: string): Promise<T> {
+    awaitComponent<T>(componentName: string): Promise<T> {
         return new Promise((resolve, reject) => {
             const component = this.components.find((c) => c.name === componentName);
 

@@ -18,6 +18,19 @@ export default function setup(senses: ISenses, config: Record<any, any>): void {
             senses.scenes.scenes.push(setupScene(senses, sceneConfig));
         }
     }
+
+    senses.addService({
+        name: "scene.activate",
+        description: "Activate scene",
+        call(params: { scene: string }) {
+            if (!params.scene) {
+                throw new Error("Empty scene name is not allowed!");
+            }
+
+            senses.scenes.activate(params.scene);
+            return true;
+        },
+    });
 }
 
 function setupScene(senses: ISenses, config: Record<string, string | number | boolean>): IScene {
@@ -26,7 +39,7 @@ function setupScene(senses: ISenses, config: Record<string, string | number | bo
     return {
         available: true,
         name: <string>config.name,
-        topic: <string>config.topic || `${senses.domain}/$senses/scene${room ? "/" + room : ""}`,
+        topic: <string>config.topic || `${senses.domain}/scene${room ? "/" + room : ""}`,
         type: "scene",
         uid: <string>config.uid || `scene-${room ? room + "-" : ""}${config.name}`,
         icon: <string>config.icon,

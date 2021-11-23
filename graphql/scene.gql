@@ -1,0 +1,11 @@
+type Scene {
+    uid: String!
+    name: String!
+    room: String
+    icon: String
+    title: String
+}
+
+extend type Query {
+    scenes: [Scene]
+}
