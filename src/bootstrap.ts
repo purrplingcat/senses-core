@@ -54,8 +54,9 @@ export async function setupSenses(configFile: string, debug: boolean): Promise<S
     const config = yaml.parseDocument(fs.readFileSync(configFile).toString()).toJSON();
     const domain = config.domain || process.env.HOSTNAME || "localhost";
     const name = config.name || process.env.SENSES_NAME || "Senses Home";
+    const mergedEnv = { ...process.env, ...config.env };
     const mqtt = createMqttClient(getIn(config, ["mqtt", "brokerUrl"], String), getIn(config, ["mqtt", "options"]));
-    const senses = new Senses(mqtt, domain, name, debug);
+    const senses = new Senses(mqtt, domain, name, mergedEnv, debug);
 
     await loadComponents(components, senses, config);
     senses.config = config;

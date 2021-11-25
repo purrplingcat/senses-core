@@ -152,7 +152,11 @@ export function getIn<T>(o: any, path: string | string[], cast?: (raw: any) => T
     let current = o;
     let key;
 
-    if (!Array.isArray(path)) {
+    if (o == null || path == null) {
+        throw new Error("Missing arguments");
+    }
+
+    if (typeof path === "string") {
         path = path.split(".");
     }
 

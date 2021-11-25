@@ -1,5 +1,13 @@
 domain: roztoky
 
+env:
+  field: e
+  a: 42
+  b: 16
+  c: 
+    d: meow
+    e: true
+
 http:
   port: 8080
 

@@ -18,6 +18,7 @@ import { IRenderer, Renderer } from "./template";
 
 export interface ISenses {
     config: any;
+    env: Record<string, any>;
     components: Component[];
     debug: boolean;
     eventbus: EventBus;
@@ -47,6 +48,7 @@ export interface ISenses {
 
 export class Senses implements ISenses {
     config: any;
+    env: Record<string, any>;
     debug: boolean;
     eventbus: EventBus;
     mqtt: MqttClient;
@@ -73,7 +75,7 @@ export class Senses implements ISenses {
         this._loopTimeout = setTimeout(this._loop, 1000);
     };
 
-    constructor(mqtt: MqttClient, domain: string, name: string, debug = false) {
+    constructor(mqtt: MqttClient, domain: string, name: string, env: Record<string, any>, debug = false) {
         this._uid = `AC-${domain}-senses-${process.env.NODE_INSTANCE_ID || 0}-${process.pid}-${Date.now()}`;
         this.eventbus = new EventBus(this);
         this.config = {};
@@ -87,6 +89,7 @@ export class Senses implements ISenses {
         this.startAt = 0;
         this.domain = domain;
         this.name = name;
+        this.env = env;
         this.debug = debug;
         this.drivers = { ...drivers };
         this.scenes = new SceneController(this);
