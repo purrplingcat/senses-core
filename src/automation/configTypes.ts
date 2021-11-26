@@ -1,11 +1,14 @@
+import { AutomationMode } from "./Automation";
+
 export interface TriggerConfig {
     on: string;
     id?: string;
-    [key: string]: number | string | boolean | null;
+    [key: string]: number | string | boolean | null | undefined;
 }
 
 export interface ConditionConfig {
     condition: string;
+    id?: string;
 }
 
 export interface ActionConfig {
@@ -15,6 +18,7 @@ export interface ActionConfig {
 
 export interface AutomationConfig {
     name: string;
+    mode?: AutomationMode;
     trigger: TriggerConfig | TriggerConfig[];
     condition: ConditionConfig | ConditionConfig[];
     action: ActionConfig | ActionConfig[];

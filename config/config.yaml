@@ -20,12 +20,6 @@ mqtt:
   #  keyFile: certs/client.key
   #  rejectUnauthorized: false
 
-expose:
-  enabled: yes
-
-watcher:
-  interval: 2000
-
 device:
   discovery: true
   devices:

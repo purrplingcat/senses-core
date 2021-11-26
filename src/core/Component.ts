@@ -53,7 +53,7 @@ export default class Component extends EventEmitter {
             throw new Error(`Failed to load component ${this.name} (${this.source}): No setup function`);
         }
 
-        this.exports = await this._resolveExports(setup(senses, config));
+        this.exports = await this._resolveExports(setup.call(this, senses, config));
         this._loaded = true;
         consola.debug(`Component ${this.name} loaded`);
 
