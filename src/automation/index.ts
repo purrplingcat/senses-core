@@ -37,7 +37,7 @@ const checkMode: (mode: string) => boolean = (mode) => ["single", "queued", "par
 
 async function createAutomation(config: AutomationConfig, senses: ISenses): Promise<Automation> {
     if (config.mode && !checkMode(config.mode)) throw new Error(`Invalid automation mode: ${config.mode}`);
-    const automation = new Automation(config.name, config.mode || "single");
+    const automation = new Automation(config.name, config.mode || "single", config.maxConcurency);
 
     for (const trigger of arrayOf<TriggerConfig>(config.trigger)) {
         trigger.id = trigger.id || `trigger${automation.triggers.length}`;

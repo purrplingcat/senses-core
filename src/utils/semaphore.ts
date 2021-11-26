@@ -23,9 +23,12 @@ interface QueueEntry {
 }
 
 export interface ISemaphore {
+    maxConcurency: number;
     acquire(priority: number): Promise<[number, Releaser]>;
     runExclusive<T>(callback: Worker<T>, priority?: number, ttl?: number): Promise<T>;
     isLocked(): boolean;
+    isFree(): boolean;
+    isQueueFull(): boolean;
     cancel(): void;
 }
 
@@ -38,7 +41,7 @@ export interface Worker<T> {
 }
 
 export class Semaphore implements ISemaphore {
-    constructor(private _maxConcurrency: number, private _cancelError: Error = E_CANCELED) {
+    constructor(private _maxConcurrency: number, private _maxQueue = -1, private _cancelError: Error = E_CANCELED) {
         if (_maxConcurrency <= 0) {
             throw new Error("Semaphore must be initialized to a positive value");
         }
@@ -46,9 +49,17 @@ export class Semaphore implements ISemaphore {
         this._value = _maxConcurrency;
     }
 
+    get maxConcurency(): number {
+        return this._maxConcurrency;
+    }
+
     acquire(priority = 0): Promise<[number, Releaser]> {
         const locked = this.isLocked();
         const ticketPromise = new Promise<[number, Releaser]>((resolve, reject) => {
+            if (this.isQueueFull()) {
+                return reject("Queue limit exceeded");
+            }
+
             this._queue.push({ priority, resolve, reject });
             this._queue.sort(byPriority);
         });
@@ -75,6 +86,14 @@ export class Semaphore implements ISemaphore {
 
     isLocked(): boolean {
         return this._value <= 0;
+    }
+
+    isQueueFull(): boolean {
+        return this._maxQueue >= 0 && this._queue.length >= this._maxQueue;
+    }
+
+    isFree(): boolean {
+        return this._value >= this._maxConcurrency;
     }
 
     cancel(): void {

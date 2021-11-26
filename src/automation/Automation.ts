@@ -29,15 +29,22 @@ export default class Automation {
     private _logger: Consola;
     private _events = new EventEmmiter();
     private _queue: ISemaphore;
+    lastExecutionError: unknown;
 
-    constructor(name: string, mode: AutomationMode) {
+    constructor(name: string, mode: AutomationMode, maxConcurency = 10) {
         this.actions = [];
         this.triggers = [];
         this.conditions = [];
         this.name = name;
         this.mode = mode;
         this._logger = consola.withScope("automation").withTag(name);
-        this._queue = new Semaphore(mode === "parallel" ? Number.MAX_SAFE_INTEGER : 1);
+        this._queue = new Semaphore(["single", "restart"].includes(mode) ? 1 : maxConcurency);
+        this._onExecutionDone = this._onExecutionDone.bind(this);
+        this._onExecutionError = this._onExecutionError.bind(this);
+    }
+
+    get running(): boolean {
+        return !this._queue.isFree();
     }
 
     trigger(trigger: Trigger): this {
@@ -69,32 +76,30 @@ export default class Automation {
 
     cancel(): void {
         this._queue.cancel();
-        this._events.emit("cancel", new Error(`Automation ${this.name}: Execution was cancelled`));
+        this._events.emit("cancel", "Automation execution cancelled");
         this._logger.info(`Automation ${this.name}: Execution was cancelled`);
     }
 
     private async _play(context: object) {
         this._logger.debug(`Automation ${this.name}: Playing ${this.actions.length} actions ...`);
-        const signal = createCancellableSignal();
+        const signal = createCancellableSignal(`Automation ${this.name}`, this._logger.debug);
         const cancel = (reason: unknown) => signal.cancel(reason);
 
         this._events.once("cancel", cancel);
 
-        for (const action of this.actions) {
-            if (signal.isCancelled) break;
-            try {
+        try {
+            for (const action of this.actions) {
+                if (signal.isCancelled) break;
+
                 this._logger.debug(`Execute action ${this.name}.${action.id}<${action.name}>`);
                 this._logger.trace(`Action ${this.name}.${action.id}<${action.name}> context:`, context);
 
                 await action(context, signal);
-            } catch (err) {
-                consola.error(err);
             }
+            this._logger.trace("Action sequence is done!");
+        } finally {
+            this._events.off("cancel", cancel);
         }
-
-        signal.release();
-        this._events.off("cancel", cancel);
-        this._logger.trace("Action sequence is done!");
     }
 
     async play(context: Record<string, any> = {}): Promise<void> {
@@ -110,9 +115,9 @@ export default class Automation {
             }
         }
 
-        if (this.mode === "single" && this._queue.isLocked()) {
+        if (["single", "parallel"].includes(this.mode) && this._queue.isLocked()) {
             return this._logger.warn(
-                `Automation ${this.name}: Tried to execute action sequence while another is currently executed in single mode.`,
+                `Automation ${this.name}: Execution limit (${this._queue.maxConcurency}) exceeded in ${this.mode} mode.`,
             );
         }
 
@@ -120,7 +125,20 @@ export default class Automation {
             this.cancel();
         }
 
-        this._queue.runExclusive(() => this._play(context).catch(this._logger.error));
+        this._queue
+            .runExclusive(() => this._play(context))
+            .then(this._onExecutionDone)
+            .catch(this._onExecutionError);
         this._logger.debug(`Automation ${this.name}: Enqueued new automation execution`);
+    }
+
+    private _onExecutionDone() {
+        this.lastExecutionError = null;
+        this._logger.info(`Automation '${this.name}' executed SUCCESSFULLY`);
+    }
+
+    private _onExecutionError(err: unknown) {
+        this.lastExecutionError = err;
+        this._logger.error(`Error while executing automation '${this.name}':`, err);
     }
 }

@@ -19,6 +19,7 @@ export interface ActionConfig {
 export interface AutomationConfig {
     name: string;
     mode?: AutomationMode;
+    maxConcurency?: number;
     trigger: TriggerConfig | TriggerConfig[];
     condition: ConditionConfig | ConditionConfig[];
     action: ActionConfig | ActionConfig[];
