@@ -34,8 +34,8 @@ type Device {
     timeout: Int
     turnable: Boolean
     turn: TurnState
-    state: JSON
-    extraAttrs: JSON
+    state: JSONObject
+    extraAttrs: JSONObject
     features: [String]
     tags: [String]
     via: ID
@@ -49,12 +49,12 @@ type Group {
 }
 
 extend type Query {
-    devices(filter: JSON): [Device]
+    devices(filter: JSONObject): [Device]
     device(uid: ID!): Device!
 }
 
 extend type Mutation {
-    setState(deviceUid: String!, newState: JSON!): Boolean
+    setState(deviceUid: String!, newState: JSONObject!): Boolean
 }
 
 extend type Subscription {

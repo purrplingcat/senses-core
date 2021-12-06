@@ -4,13 +4,15 @@ import { loadSchema } from "./tools";
 import { ContextSenses } from "./types";
 import GraphQLDate from "./scalars/date";
 import path from "path";
+import { GraphQLUpload } from "apollo-server-core";
 
 export default createModule({
     id: "main",
     typeDefs: loadSchema(path.join(application.rootDir, "graphql/schema.gql")),
     resolvers: {
         Date: GraphQLDate,
-        JSON: GraphQLJSONObject,
+        JSONObject: GraphQLJSONObject,
+        Upload: GraphQLUpload,
         Query: {
             name: (_: never, args: never, context: ContextSenses) => context.senses.name,
             version: () => application.manifest.version,

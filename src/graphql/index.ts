@@ -9,13 +9,24 @@ import mainModule from "./mainModule";
 export const pubsub: PubSubEngine = new PubSub();
 
 function setupGraphQl(senses: ISenses, modules: Module[]): ApolloServer {
-    const app = createApplication({ modules: [...modules, mainModule] });
+    const app = createApplication({ modules: [mainModule, ...modules] });
     const schema = app.createSchemaForApollo();
 
     return new ApolloServer({
         schema,
         context: (session) => ({ ...session, senses, pubsub }),
     });
+}
+
+async function resolveModule(
+    senses: ISenses,
+    module: Module | ((senses: ISenses) => Module | Promise<Module>),
+): Promise<Module> {
+    if (typeof module === "function") {
+        return module(senses);
+    }
+
+    return module;
 }
 
 async function loadModules(components: Component[], senses: ISenses): Promise<Module[]> {
@@ -31,7 +42,7 @@ async function loadModules(components: Component[], senses: ISenses): Promise<Mo
             module.prepare(senses);
         }
 
-        modules.push(module.default ?? module);
+        modules.push(await resolveModule(senses, module.default ?? module));
     }
 
     return modules;

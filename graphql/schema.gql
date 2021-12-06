@@ -1,5 +1,6 @@
 scalar Date
-scalar JSON
+scalar JSONObject
+scalar Upload
 
 type Service {
     name: String!
@@ -13,7 +14,7 @@ type Query {
 }
 
 type Mutation {
-    callService(name: String!, params: JSON): Boolean!
+    callService(name: String!, params: JSONObject): Boolean!
 }
 
 type Subscription
